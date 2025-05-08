@@ -79,32 +79,25 @@ local Toggle = Tabs.Main:CreateToggle("FastGrind", {
     Title = "Fast Lift (Packs Only)",
     Default = false,
     Callback = function(Value)
-        local a = game:GetService("ReplicatedStorage")
-local b = game:GetService("Players")
-local c = b.LocalPlayer
- 
--- Fun??o para equipar apenas o "Swift Samurai" (sem desequipar nada antes)
-local function k()
-    for m, n in pairs(c.petsFolder.Unique:GetChildren()) do
-        if n.Name == "Swift Samurai" then
-            a.rEvents.equipPetEvent:FireServer("equipPet", n)
-        end
-    end
-end
- 
--- Loop principal focado apenas em ganhar Strength rapidamente
-task.spawn(function()
-    k() -- Equipa o Swift Samurai no come?o e n?o troca mais
- 
-    while true do
-        -- Farm de Strength (agora com 0.001s de delay)
-        for y = 1, 10 do
-            c.muscleEvent:FireServer("rep")
-        end
-        task.wait(0.001) -- Super rápido
-    end
-end)
+        local a = game:GetService("ReplicatedStorage") local b = game:GetService("Players") local c = b.LocalPlayer
 
+-- Fun??o para equipar apenas o "Swift Samurai" (sem desequipar nada antes)
+	local function k() for m, n in pairs(c.petsFolder.Unique:GetChildren()) do if n.Name == "Swift Samurai" then a.rEvents.equipPetEvent:FireServer("equipPet", n) end end end
+
+-- Loop principal focado apenas em ganhar Strength rapidamente
+	task.spawn(function() 
+        k() -- Equipa o Swift Samurai no come?o e n?o troca mais
+
+while true do
+    -- Farm de Strength (agora com 0.001s de delay)
+    for y = 1, 10 do
+        c.muscleEvent:FireServer("rep")
+    end
+    task.wait(0.001) -- Super rápido
+        end
+     end) 
+  end, 
+})
 
 local Toggle = Tabs.AutoFarm:CreateToggle("Weight", {
 	Title = "Auto Weight",
