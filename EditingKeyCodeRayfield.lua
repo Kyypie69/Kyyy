@@ -1,4 +1,4 @@
-local key = 50kgontop -- put youre key in here
+local key = loadstring(game:HttpGet("https://pastebin.com/raw/4xsGXqbv",true))() -- put youre key in here
  
 local keylink = "Kupal.dof" -- put your key link here
  
