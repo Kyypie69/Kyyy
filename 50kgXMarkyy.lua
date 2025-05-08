@@ -950,31 +950,6 @@ c.Enabled = true
 c.Saturation = 0.2
 c.TintColor = Color3.fromRGB(217, 145, 57)
 
-local function createParticles(part)
-	local attachment = Instance.new("Attachment", part)
-	local codeParticle = Instance.new("ParticleEmitter", attachment)
-	codeParticle.Texture = "rbxassetid://244905904"
-	codeParticle.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 0)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 155, 0))
-	})
-	codeParticle.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.5),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	codeParticle.Lifetime = NumberRange.new(0.5, 1)
-	codeParticle.Rate = 50
-	codeParticle.Speed = NumberRange.new(5, 10)
-	codeParticle.SpreadAngle = Vector2.new(-180, 180)
-	local lightning = Instance.new("Bloom", part)
-	lightning.Texture = "rbxassetid://446111271"
-	lightning.TextureSpeed = 3
-	lightning.Color = ColorSequence.new(Color3.fromRGB(0, 255, 0))
-	return {
-		codeParticle,
-		lightning
-	}
-end
 
 Tabs.Settings:CreateButton{
 	Title = "Rejoin",
