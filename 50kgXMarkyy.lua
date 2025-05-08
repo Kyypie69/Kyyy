@@ -75,7 +75,7 @@ local selectedSize = "2"
 
 Tabs.Main:AddButton({
         Title = "Fast Grind",
-        Description = " Super Speed (With Swifts)",
+        Description = "Super Speed (With Swifts)",
         Callback = function()
             Window:Dialog({
                 Title = "Super Speed",
