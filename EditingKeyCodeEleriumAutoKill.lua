@@ -1,4 +1,4 @@
-local key = loadstring(game:HttpGet("https://pastebin.com/raw/4xsGXqbv",true))() -- put youre key in here
+local key = loadstring(game:HttpGet("https://pastebin.com/raw/62f2jF5f",true))() -- put youre key in here
  
 local keylink = "Kupal.dof" -- put your key link here
  
@@ -90,7 +90,7 @@ TextButton.MouseButton1Click:Connect(function()
 	if KeyTextbox.Text == key then
 		TextButton.Text = "PALO Correct Key!"
 		task.wait(1)
-		loadstring(game:HttpGet("https://https://raw.githubusercontent.com/Kyypie69/Muscle-Legends/refs/heads/main/50kgXMarkyy.lua",true))() -- insert script on this line
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Muscle-Legends/refs/heads/main/50kgXMarkyy.lua",true))() -- insert script on this line
 		ScreenGui:Destroy()
 	else
 		TextButton.Text = "TANGINA MO Wrong Key!"
