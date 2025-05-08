@@ -73,31 +73,55 @@ local selectedSize = "2"
     })
 
 
-local isGrinding = false 
-
-local Toggle = Tabs.Main:CreateToggle("FastGrind", {
-    Title = "Fast Lift (Packs Only)",
-    Default = false,
-    Callback = function(Value)
-        local a = game:GetService("ReplicatedStorage") local b = game:GetService("Players") local c = b.LocalPlayer
-
+Tabs.Main:AddButton({
+        Title = "Fast Grind",
+        Description = " Super Speed (With Swifts)",
+        Callback = function()
+            Window:Dialog({
+                Title = "Super Speed",
+                Content = "Speed Grind",
+                Buttons = {
+                    {
+                        Title = "Confirm",
+                        Callback = function()
+                          local a = game:GetService("ReplicatedStorage")
+local b = game:GetService("Players")
+local c = b.LocalPlayer
+ 
 -- Fun??o para equipar apenas o "Swift Samurai" (sem desequipar nada antes)
-	local function k() for m, n in pairs(c.petsFolder.Unique:GetChildren()) do if n.Name == "Swift Samurai" then a.rEvents.equipPetEvent:FireServer("equipPet", n) end end end
-
--- Loop principal focado apenas em ganhar Strength rapidamente
-	task.spawn(function() 
-        k() -- Equipa o Swift Samurai no come?o e n?o troca mais
-
-while true do
-    -- Farm de Strength (agora com 0.001s de delay)
-    for y = 1, 10 do
-        c.muscleEvent:FireServer("rep")
-    end
-    task.wait(0.001) -- Super rápido
+local function k()
+    for m, n in pairs(c.petsFolder.Unique:GetChildren()) do
+        if n.Name == "Swift Samurai" then
+            a.rEvents.equipPetEvent:FireServer("equipPet", n)
         end
-     end) 
-  end, 
-})
+    end
+end
+ 
+-- Loop principal focado apenas em ganhar Strength rapidamente
+task.spawn(function()
+    k() -- Equipa o Swift Samurai no come?o e n?o troca mais
+ 
+    while true do
+        -- Farm de Strength (agora com 0.001s de delay)
+        for y = 1, 10 do
+            c.muscleEvent:FireServer("rep")
+        end
+        task.wait(0.001) -- Super rápido
+    end
+end)
+                    end
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+                            print("Cancelled the dialog.")
+                        end
+                    }
+                }
+            })
+        end
+    })
+
 
 local Toggle = Tabs.AutoFarm:CreateToggle("Weight", {
 	Title = "Auto Weight",
@@ -904,7 +928,7 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 
 local a = game.Lighting
 a.Ambient = Color3.fromRGB(33, 33, 33)
-a.Brightness = 6.67
+a.Brightness = 1
 a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
 a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
 a.EnvironmentDiffuseScale = 0.105
@@ -950,28 +974,6 @@ local function createParticles(part)
 		codeParticle,
 		lightning
 	}
-end
-
-local function pressE()
-	local vim = game:GetService("VirtualInputManager")
-	vim:SendKeyEvent(true, "E", false, game)
-	task.wait(0.1)
-	vim:SendKeyEvent(false, "E", false, game)
-end
-
-local function autoLift()
-	while getgenv().working and task.wait() do
-		game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
-	end
-end
-
-local function teleportAndStart(machineName, position)
-	if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-		game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = position
-		task.wait(0.5)
-    		pressE()
-		autoLift()
-	end
 end
 
 Tabs.Settings:CreateButton{
