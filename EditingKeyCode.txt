@@ -4,9 +4,9 @@ local keylink = "Kupal.dof" -- put your key link here
  
 local nameofthescript = "KYY Key" --put your script name here. leave blank too leave blank ig
  
-local whoisitmadeby = "Markyy" -- put your name here
+local whoisitmadeby = "MARKYY" -- put your name here
  
-local thenoteofthekey = "Putang Ina Nyo DOF!" --note you add here. leave blank to not have a note.
+local thenoteofthekey = "PUTANG INA NIYO DOF, CTX, ONYX!" --note you add here. leave blank to not have a note.
  
 -- Instances:
  
@@ -28,8 +28,8 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
  
 KeySystem.Name = "KeySystem"
 KeySystem.Parent = ScreenGui
-KeySystem.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-KeySystem.BorderColor3 = Color3.fromRGB(0, 0, 0)
+KeySystem.BackgroundColor3 = Color3.fromRGB(150, 45, 200)
+KeySystem.BorderColor3 = Color3.fromRGB(50, 0, 50)
 KeySystem.BorderSizePixel = 0
 KeySystem.Position = UDim2.new(0.379651636, 0, 0.32965821, 0)
 KeySystem.Size = UDim2.new(0.240300864, 0, 0.340683579, 0)
@@ -60,7 +60,7 @@ UICorner_2.Parent = KeySystem
  
 title.Name = "title"
 title.Parent = KeySystem
-title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+title.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
 title.BackgroundTransparency = 1.000
 title.BorderColor3 = Color3.fromRGB(0, 0, 0)
 title.BorderSizePixel = 0
@@ -68,13 +68,13 @@ title.Position = UDim2.new(0, 0, 0.0323624611, 0)
 title.Size = UDim2.new(1, 0, 0.197411001, 0)
 title.Font = Enum.Font.Gotham
 title.Text = "KEY SYSTEM"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextColor3 = Color3.fromRGB(255, 0, 255)
 title.TextScaled = true
 title.TextSize = 14.000
 title.TextWrapped = true
  
 TextButton.Parent = KeySystem
-TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TextButton.BackgroundColor3 = Color3.fromRGB(25, 255, 25)
 TextButton.BackgroundTransparency = 0.950
 TextButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
 TextButton.BorderSizePixel = 0
@@ -88,12 +88,12 @@ TextButton.TextSize = 14.000
 TextButton.TextWrapped = true
 TextButton.MouseButton1Click:Connect(function()
 	if KeyTextbox.Text == key then
-		TextButton.Text = "Correct Key!"
+		TextButton.Text = "PALO Correct Key!"
 		task.wait(1)
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/MarkyyLoverboy/KYY/refs/heads/main/try.lua",true))() -- insert script on this line
+		loadstring(game:HttpGet("https://https://raw.githubusercontent.com/Kyypie69/Muscle-Legends/refs/heads/main/50kgXMarkyy.lua",true))() -- insert script on this line
 		ScreenGui:Destroy()
 	else
-		TextButton.Text = "Wrong Key!"
+		TextButton.Text = "TANGINA MO Wrong Key!"
 		task.wait(2)
 		TextButton.Text = "Check Key"
 	end
@@ -104,7 +104,7 @@ UICorner_3.Parent = TextButton
  
 scriptname.Name = "scriptname"
 scriptname.Parent = KeySystem
-scriptname.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+scriptname.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
 scriptname.BackgroundTransparency = 1.000
 scriptname.BorderColor3 = Color3.fromRGB(0, 0, 0)
 scriptname.BorderSizePixel = 0
@@ -112,14 +112,14 @@ scriptname.Position = UDim2.new(0, 0, 0.262135923, 0)
 scriptname.Size = UDim2.new(1, 0, 0.0809061453, 0)
 scriptname.Font = Enum.Font.Gotham
 scriptname.Text = nameofthescript
-scriptname.TextColor3 = Color3.fromRGB(255, 255, 255)
+scriptname.TextColor3 = Color3.fromRGB(25, 255, 25)
 scriptname.TextScaled = true
 scriptname.TextSize = 14.000
 scriptname.TextWrapped = true
  
 madeby.Name = "madeby"
 madeby.Parent = KeySystem
-madeby.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+madeby.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
 madeby.BackgroundTransparency = 1.000
 madeby.BorderColor3 = Color3.fromRGB(0, 0, 0)
 madeby.BorderSizePixel = 0
@@ -127,7 +127,7 @@ madeby.Position = UDim2.new(0, 0, 0.368932039, 0)
 madeby.Size = UDim2.new(1, 0, 0.0809061453, 0)
 madeby.Font = Enum.Font.Gotham
 madeby.Text = "Made by: " .. whoisitmadeby
-madeby.TextColor3 = Color3.fromRGB(255, 255, 255)
+madeby.TextColor3 = Color3.fromRGB(25, 255, 25)
 madeby.TextScaled = true
 madeby.TextSize = 14.000
 madeby.TextWrapped = true
@@ -135,7 +135,7 @@ madeby.Visible = true
  
 note.Name = "note"
 note.Parent = KeySystem
-note.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+note.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
 note.BackgroundTransparency = 1.000
 note.BorderColor3 = Color3.fromRGB(0, 0, 0)
 note.BorderSizePixel = 0
@@ -143,7 +143,7 @@ note.Position = UDim2.new(0, 0, 0.919093847, 0)
 note.Size = UDim2.new(1, 0, 0.0809061453, 0)
 note.Font = Enum.Font.Gotham
 note.Text = thenoteofthekey
-note.TextColor3 = Color3.fromRGB(255, 255, 255)
+note.TextColor3 = Color3.fromRGB(25, 255, 25)
 note.TextScaled = true
 note.TextSize = 14.000
 note.TextWrapped = true
