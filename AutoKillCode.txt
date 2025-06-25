@@ -1523,58 +1523,80 @@ misc2Folder:AddSwitch("Auto Handstands", function(bool)
     end
 end)
 
--- Create the third folder
-local misc3Folder = miscTab:AddFolder("Misc 3")
 
--- Add PACKS FARM toggle
-misc3Folder:AddSwitch("PACKS REBIRTH", function()
-    local a=game:GetService("ReplicatedStorage")local b=game:GetService("Players")local c=b.LocalPlayer;local d=function(e)local f=c.petsFolder;for g,h in pairs(f:GetChildren())do if h:IsA("Folder")then for i,j in pairs(h:GetChildren())do a.rEvents.equipPetEvent:FireServer("unequipPet",j)end end end;task.wait(.1)end;local k=function(l)d()task.wait(.01)for m,n in pairs(c.petsFolder.Unique:GetChildren())do if n.Name==l then a.rEvents.equipPetEvent:FireServer("equipPet",n)end end end;local o=function(p)local q=workspace.machinesFolder:FindFirstChild(p)if not q then for r,s in pairs(workspace:GetChildren())do if s:IsA("Folder")and s.Name:find("machines")then q=s:FindFirstChild(p)if q then break end end end end;return q end;local t=function()local u=game:GetService("VirtualInputManager")u:SendKeyEvent(true,"E",false,game)task.wait(.1)u:SendKeyEvent(false,"E",false,game)end;task.spawn(function()while true do local v=c.leaderstats.Rebirths.Value;local w=10000+(5000*v)if c.ultimatesFolder:FindFirstChild("Golden Rebirth")then local x=c.ultimatesFolder["Golden Rebirth"].Value;w=math.floor(w*(1-(x*0.1)))end;d()task.wait(.1)k("Swift Samurai")while c.leaderstats.Strength.Value<w do for y=1,10 do c.muscleEvent:FireServer("rep")end;task.wait()end;d()task.wait(.1)k("Tribal Overlord")local z=o("Jungle Bar Lift")if z and z:FindFirstChild("interactSeat")then c.Character.HumanoidRootPart.CFrame=z.interactSeat.CFrame*CFrame.new(0,3,0)repeat task.wait(.1)t()until c.Character.Humanoid.Sit end;local A=c.leaderstats.Rebirths.Value;repeat a.rEvents.rebirthRemote:InvokeServer("rebirthRequest")task.wait(.1)until c.leaderstats.Rebirths.Value>A;task.wait()end end)
-                    end
-
--- Add Infinite Jump toggle
-misc3Folder:AddSwitch("Jumpy Infinite", function(bool)
-    _G.InfiniteJump = bool
+local packFarm = rebirthFarmFolder:AddSwitch("Rebirth Farm", function(bool)
+    isRunning = bool
     
-    if bool then
-        local InfiniteJumpConnection
-        InfiniteJumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
-            if _G.InfiniteJump then
-                game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-            else
-                InfiniteJumpConnection:Disconnect()
+    task.spawn(function()
+        while isRunning do
+            local currentRebirths = player.leaderstats.Rebirths.Value
+            local rebirthCost = 10000 + (5000 * currentRebirths)
+            
+            if player.ultimatesFolder:FindFirstChild("Golden Rebirth") then
+                local goldenRebirths = player.ultimatesFolder["Golden Rebirth"].Value
+                rebirthCost = math.floor(rebirthCost * (1 - (goldenRebirths * 0.1)))
+            end
+            unequipAllPets()
+            task.wait(0.1)
+            equipUniquePet("Swift Samurai")
+            
+            while isRunning and player.leaderstats.Strength.Value < rebirthCost do
+                for i = 1, 10 do
+                    player.muscleEvent:FireServer("rep")
+                end
+                task.wait()
+            end
+            unequipAllPets()
+            task.wait(0.1)
+            equipUniquePet("Tribal Overlord")
+            local machine = findMachine("Jungle Bar Lift")
+            if machine and machine:FindFirstChild("interactSeat") then
+                player.Character.HumanoidRootPart.CFrame = machine.interactSeat.CFrame * CFrame.new(0, 3, 0)
+                repeat
+                    task.wait(0.1)
+                    pressE()
+                until player.Character.Humanoid.Sit
+            end
+            local initialRebirths = player.leaderstats.Rebirths.Value
+            repeat
+                ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                task.wait(0.1)
+            until player.leaderstats.Rebirths.Value > initialRebirths
+            if not isRunning then break end
+            task.wait()
+        end
+    end)
+end)
+
+local frameToggle = rebirthFarmFolder:AddSwitch("Hide Frames", function(bool)
+    local rSto = game:GetService("ReplicatedStorage")
+    for _, obj in pairs(rSto:GetChildren()) do
+        if obj.Name:match("Frame$") then
+            obj.Visible = not bool
+        end
+    end
+end)
+
+local speedGrind = rebirthFarmFolder:AddSwitch("Fast Strength", function(bool)
+    local isGrinding = bool
+    
+    if not bool then
+        unequipAllPets()
+        return
+    end
+    
+    equipUniquePet("Swift Samurai")
+    
+    for i = 1, 14 do
+        task.spawn(function()
+            while isGrinding do
+                player.muscleEvent:FireServer("rep")
+                task.wait()
             end
         end)
-        
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "High na High",
-            Text = "Sumakses ka eh",
-            Duration = 0
-        })
     end
 end)
 
-local timeDropdown = misc3Folder:AddDropdown("Change Time", function(selection)
-    local lighting = game:GetService("Lighting")
-    
-    if selection == "Night" then
-        lighting.ClockTime = 0
-    elseif selection == "Day" then
-        lighting.ClockTime = 12
-    elseif selection == "Midnight" then
-        lighting.ClockTime = 6
-    end
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Hora Cambiada",
-        Text = "La hora del día ha sido cambiada a: " .. selection,
-        Duration = 0
-    })
-end)
-
--- Add time options
-timeDropdown:Add("Night")
-timeDropdown:Add("Day")
-timeDropdown:Add("Midnight")
 
 
 local killerTab = window:AddTab("Killer")
