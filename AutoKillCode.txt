@@ -1980,7 +1980,7 @@ killerTab:AddTextBox("Select View Player (Username)", function(text)
 			print("")
 		end
 	end
-})
+end)
 
 killerTab:AddButton("View Target", function()
     if text and text ~= "" then
@@ -1988,8 +1988,7 @@ killerTab:AddButton("View Target", function()
 		local camera = workspace.CurrentCamera
 		camera.CameraSubject = Players.LocalPlayer.Character.Humanoid
 		print("")
-	end
-}
+end)
 
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
