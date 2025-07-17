@@ -1955,6 +1955,7 @@ killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
         if player then
             _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
             updateTargetPlayerLabel()
+        end
         local player = findClosestPlayer(text)
         if player then
             _G.viewPlayer = player.Name .. " (" .. player.DisplayName .. ")"
