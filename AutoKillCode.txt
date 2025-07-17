@@ -1962,8 +1962,8 @@ end)
 killerTab:AddTextBox("Select View Player (Username)", function(text)
     if text and text ~= "" then
         local Players = game:GetService("Players")
-		local targetPlayer
-		targetPlayer = Players:FindFirstChild(Value)
+	local targetPlayer
+	targetPlayer = Players:FindFirstChild(Value)
 		if not targetPlayer then
 			for _, player in pairs(Players:GetPlayers()) do
 				if player.DisplayName:lower() == Value:lower() then
@@ -1976,11 +1976,11 @@ killerTab:AddTextBox("Select View Player (Username)", function(text)
 			local camera = workspace.CurrentCamera
 			camera.CameraSubject = targetPlayer.Character.Humanoid
 			print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
-		else
-			print("")
-		end
+	else
+	print("")
 	end
-})
+    end
+end)
 
 killerTab:AddButton("View Target", function()
     if text and text ~= "" then
@@ -1988,8 +1988,7 @@ killerTab:AddButton("View Target", function()
 		local camera = workspace.CurrentCamera
 		camera.CameraSubject = Players.LocalPlayer.Character.Humanoid
 		print("")
-	end
-}
+end)
 
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
