@@ -1959,6 +1959,11 @@ killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
     end
 end)
 
+killerTab:AddButton("View Target", function()
+    _G.viewPlayer = ""
+    updateViewPlayerLabel()
+end)
+
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
     updateTargetPlayerLabel()
