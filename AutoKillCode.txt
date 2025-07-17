@@ -1965,9 +1965,13 @@ killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
 end)
 
 killerTab:AddButton("View Target", function()
-    _G.viewPlayer = ""
-    updateViewPlayerLabel()
-end)
+    if text and text ~= "" then
+    local Players = game:GetService("Players")
+		local camera = workspace.CurrentCamera
+		camera.CameraSubject = Players.LocalPlayer.Character.Humanoid
+		print("")
+	end
+}
 
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
