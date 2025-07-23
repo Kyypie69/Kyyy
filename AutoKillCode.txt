@@ -2032,38 +2032,49 @@ end)
 -- View Player Folder
 local viewPlayerFolder = mainTab:AddFolder("View Player")
 
--- Helper to refresh player list
-local function getPlayerList()
-    local playerList = {}
+-- Helper to get player display names (and keep reference to actual names)
+local function getPlayerDropdown()
+    local list = {}
+    local ref = {}
     for _, p in ipairs(Players:GetPlayers()) do
-        table.insert(playerList, p.Name)
+        local label = p.DisplayName .. " [" .. p.Name .. "]"
+        table.insert(list, label)
+        ref[label] = p.Name
     end
-    return playerList
+    return list, ref
 end
 
-local selectedPlayerName = Players.LocalPlayer.Name
+local playerDropdownList, playerDropdownRef = getPlayerDropdown()
+local selectedPlayerLabel = playerDropdownList[1]
+local selectedPlayerName = playerDropdownRef[selectedPlayerLabel] or Players.LocalPlayer.Name
 
--- Dropdown to select player
-viewPlayerFolder:AddDropdown("Select Player", getPlayerList(), function(name)
-    selectedPlayerName = name
+-- Dropdown to select player by display name
+viewPlayerFolder:AddDropdown("Select Player", playerDropdownList, function(label)
+    selectedPlayerLabel = label
+    selectedPlayerName = playerDropdownRef[label] or Players.LocalPlayer.Name
 end)
 
--- Update dropdown on player join/leave
-Players.PlayerAdded:Connect(function()
-    viewPlayerFolder:UpdateDropdown("Select Player", getPlayerList())
-end)
-Players.PlayerRemoving:Connect(function()
-    viewPlayerFolder:UpdateDropdown("Select Player", getPlayerList())
-end)
+-- Update dropdown when players join/leave
+local function refreshDropdown()
+    playerDropdownList, playerDropdownRef = getPlayerDropdown()
+    viewPlayerFolder:UpdateDropdown("Select Player", playerDropdownList)
+    if not playerDropdownRef[selectedPlayerLabel] then
+        selectedPlayerLabel = playerDropdownList[1]
+        selectedPlayerName = playerDropdownRef[selectedPlayerLabel]
+    end
+end
+Players.PlayerAdded:Connect(refreshDropdown)
+Players.PlayerRemoving:Connect(refreshDropdown)
 
--- Show Stats Button
+-- Button: Show Stats for selected player
 viewPlayerFolder:AddButton("Show Stats", function()
     local selectedPlayer = Players:FindFirstChild(selectedPlayerName)
     if selectedPlayer and selectedPlayer:FindFirstChild("leaderstats") then
         local stats = selectedPlayer.leaderstats
         local msg = string.format(
-            "Player: %s\nStrength: %s\nDurability: %s\nKills: %s\nRebirths: %s\nBrawls: %s",
+            "Player: %s\nDisplay Name: %s\nStrength: %s\nDurability: %s\nKills: %s\nRebirths: %s\nBrawls: %s",
             selectedPlayer.Name,
+            selectedPlayer.DisplayName,
             stats.Strength and stats.Strength.Value or "N/A",
             selectedPlayer:FindFirstChild("Durability") and selectedPlayer.Durability.Value or "N/A",
             stats.Kills and stats.Kills.Value or "N/A",
@@ -2084,7 +2095,7 @@ viewPlayerFolder:AddButton("Show Stats", function()
     end
 end)
 
--- Teleport to Player Button
+-- Button: Teleport to selected player
 viewPlayerFolder:AddButton("Teleport to Player", function()
     local selectedPlayer = Players:FindFirstChild(selectedPlayerName)
     if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -2096,17 +2107,13 @@ viewPlayerFolder:AddButton("Teleport to Player", function()
     end
 end)
 
--- View Camera Button
+-- Button: View selected player in camera
 viewPlayerFolder:AddButton("View Camera", function()
     local selectedPlayer = Players:FindFirstChild(selectedPlayerName)
     if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
         workspace.CurrentCamera.CameraSubject = selectedPlayer.Character.HumanoidRootPart
     end
 end)
-
--- Initialize UI
-updateWhitelistedPlayersLabel()
-updateTargetPlayerLabel()
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
