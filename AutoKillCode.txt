@@ -2044,11 +2044,11 @@ local function getPlayerList()
 end
 
 -- Add the dropdown and button to a given tab
-local function AddPlayerDropdown(tab)
+local function AddPlayerDropdown(mainTab)
     local selectedPlayerName = nil
 
     -- Create dropdown
-    local dropdown = tab:AddDropdown("Select Player", getPlayerList(), function(selection)
+    local dropdown = mainTab:AddDropdown("Select Player", getPlayerList(), function(selection)
         local username = selection:match("%(([^)]+)%)")
         selectedPlayerName = username
     end)
@@ -2065,7 +2065,7 @@ local function AddPlayerDropdown(tab)
     Players.PlayerRemoving:Connect(refreshDropdown)
 
     -- "View Player" button
-    tab:AddButton("View Player", function()
+    mainTab:AddButton("View Player", function()
         if selectedPlayerName then
             local target = Players:FindFirstChild(selectedPlayerName)
             if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
