@@ -1959,37 +1959,6 @@ killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
     end
 end)
 
-killerTab:AddTextBox("Select View Player (Username)", function(text)
-    if text and text ~= "" then
-        local Players = game:GetService("Players")
-		local targetPlayer
-		targetPlayer = Players:FindFirstChild(Value)
-		if not targetPlayer then
-			for _, player in pairs(Players:GetPlayers()) do
-				if player.DisplayName:lower() == Value:lower() then
-					targetPlayer = player
-					break
-				end
-			end
-		end
-		if targetPlayer and targetPlayer.Character then
-			local camera = workspace.CurrentCamera
-			camera.CameraSubject = targetPlayer.Character.Humanoid
-			print("Now spectating: " .. targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")")
-		else
-			print("")
-		end
-	end
-end)
-
-killerTab:AddButton("View Target", function()
-    if text and text ~= "" then
-    local Players = game:GetService("Players")
-		local camera = workspace.CurrentCamera
-		camera.CameraSubject = Players.LocalPlayer.Character.Humanoid
-		print("")
-end)
-
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
     updateTargetPlayerLabel()
@@ -2057,6 +2026,81 @@ killerTab:AddButton("Delete Target", function()
                 end
             end
         end)
+    end
+end)
+
+-- View Player Folder
+local viewPlayerFolder = mainTab:AddFolder("View Player")
+
+-- Helper to refresh player list
+local function getPlayerList()
+    local playerList = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        table.insert(playerList, p.Name)
+    end
+    return playerList
+end
+
+local selectedPlayerName = Players.LocalPlayer.Name
+
+-- Dropdown to select player
+viewPlayerFolder:AddDropdown("Select Player", getPlayerList(), function(name)
+    selectedPlayerName = name
+end)
+
+-- Update dropdown on player join/leave
+Players.PlayerAdded:Connect(function()
+    viewPlayerFolder:UpdateDropdown("Select Player", getPlayerList())
+end)
+Players.PlayerRemoving:Connect(function()
+    viewPlayerFolder:UpdateDropdown("Select Player", getPlayerList())
+end)
+
+-- Show Stats Button
+viewPlayerFolder:AddButton("Show Stats", function()
+    local selectedPlayer = Players:FindFirstChild(selectedPlayerName)
+    if selectedPlayer and selectedPlayer:FindFirstChild("leaderstats") then
+        local stats = selectedPlayer.leaderstats
+        local msg = string.format(
+            "Player: %s\nStrength: %s\nDurability: %s\nKills: %s\nRebirths: %s\nBrawls: %s",
+            selectedPlayer.Name,
+            stats.Strength and stats.Strength.Value or "N/A",
+            selectedPlayer:FindFirstChild("Durability") and selectedPlayer.Durability.Value or "N/A",
+            stats.Kills and stats.Kills.Value or "N/A",
+            stats.Rebirths and stats.Rebirths.Value or "N/A",
+            stats.Brawls and stats.Brawls.Value or "N/A"
+        )
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Player Stats",
+            Text = msg,
+            Duration = 10
+        })
+    else
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Error",
+            Text = "Player or stats not found.",
+            Duration = 5
+        })
+    end
+end)
+
+-- Teleport to Player Button
+viewPlayerFolder:AddButton("Teleport to Player", function()
+    local selectedPlayer = Players:FindFirstChild(selectedPlayerName)
+    if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = selectedPlayer.Character.HumanoidRootPart
+        local myChar = Players.LocalPlayer.Character
+        if myChar and myChar:FindFirstChild("HumanoidRootPart") then
+            myChar.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(2,0,2)
+        end
+    end
+end)
+
+-- View Camera Button
+viewPlayerFolder:AddButton("View Camera", function()
+    local selectedPlayer = Players:FindFirstChild(selectedPlayerName)
+    if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        workspace.CurrentCamera.CameraSubject = selectedPlayer.Character.HumanoidRootPart
     end
 end)
 
