@@ -1664,7 +1664,6 @@ end)
 
 
 local killerTab = window:AddTab("Killer")
-local killerTab = window:AddDropDown("Player")
 
 _G.whitelistedPlayers = _G.whitelistedPlayers or {}
 _G.targetPlayer = _G.targetPlayer or ""
