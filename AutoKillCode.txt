@@ -2048,7 +2048,7 @@ local function AddPlayerDropdown(mainTab)
     local selectedPlayerName = nil
 
     -- Create dropdown
-    local dropdown = mainTab:AddDropdown("Select Player", getPlayerList(), function(selection)
+    local dropdown = killerTab:AddDropdown("Select Player", getPlayerList(), function(selection)
         local username = selection:match("%(([^)]+)%)")
         selectedPlayerName = username
     end)
@@ -2065,7 +2065,7 @@ local function AddPlayerDropdown(mainTab)
     Players.PlayerRemoving:Connect(refreshDropdown)
 
     -- "View Player" button
-    mainTab:AddButton("View Player", function()
+    killerTab:AddButton("View Player", function()
         if selectedPlayerName then
             local target = Players:FindFirstChild(selectedPlayerName)
             if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
@@ -2096,7 +2096,7 @@ end
 
 -- Example usage:
 -- local AddPlayerDropdown = require(path.to.PlayerDropdown)
--- AddPlayerDropdown(mainTab)
+-- AddPlayerDropdown(killerTab)
 
 return AddPlayerDropdown
 
