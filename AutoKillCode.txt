@@ -2198,63 +2198,81 @@ statsFolder:AddButton("Copy Statistics", function()
     setclipboard(statsText)
 end)
 
--- === Player Dropdown + View Player Integration ===
-
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- Utility to get a list of players for dropdown
-local function getPlayerList()
-    local list = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        table.insert(list, p.DisplayName .. " (" .. p.Name .. ")")
+-- Helper to get player display, fallback to Username if needed
+local function getDisplay(player)
+    if player.DisplayName ~= player.Name then
+        return ("%s (@%s)"):format(player.DisplayName, player.Name)
+    else
+        return player.Name
     end
-    return list
 end
 
--- Add dropdown and view button to your tab (replace mainTab with your desired tab variable)
-do
-    local selectedPlayerName = nil
-
-    local playerDropdown = mainTab:AddDropdown("Select Player", getPlayerList(), function(selection)
-        local username = selection:match("%(([^)]+)%)")
-        selectedPlayerName = username
-    end)
-
-    -- Refresh dropdown when players join or leave
-    local function refreshDropdown()
-        playerDropdown:Clear()
-        for _, entry in ipairs(getPlayerList()) do
-            playerDropdown:Add(entry)
+-- Generate options for dropdown, map display to player
+local function getPlayerDropdownOptions()
+    local options, map = {}, {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local display = getDisplay(player)
+            table.insert(options, display)
+            map[display] = player
         end
     end
-    Players.PlayerAdded:Connect(refreshDropdown)
-    Players.PlayerRemoving:Connect(refreshDropdown)
+    return options, map
+end
 
-    mainTab:AddButton("View Player", function()
-        if selectedPlayerName then
-            local target = Players:FindFirstChild(selectedPlayerName)
-            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                local camera = workspace.CurrentCamera
-                camera.CameraSubject = target.Character.HumanoidRootPart
-                camera.CameraType = Enum.CameraType.Custom
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "View Player",
-                    Text = "Now viewing: " .. target.DisplayName,
-                    Duration = 3
-                })
-            else
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "View Player",
-                    Text = "Player not found or not loaded!",
-                    Duration = 3
-                })
+-- Initial options and mapping
+local dropdownOptions, playerMap = getPlayerDropdownOptions()
+
+local Dropdown = Tabs.Killer:CreateDropdown("SpectatePlayer", {
+    Title = "Spectate Player",
+    Description = "Piliin ang player na panoorin",
+    Options = dropdownOptions,
+    Default = "",
+    Callback = function(Value)
+        local targetPlayer = playerMap[Value]
+        if targetPlayer and targetPlayer.Character then
+            local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                workspace.CurrentCamera.CameraSubject = humanoid
             end
-        else
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "View Player",
-                Text = "No player selected!",
-                Duration = 3
-            })
         end
-    end, "Switch camera to selected player")
+    end
+})
+
+-- Update dropdown and map on player changes
+local function updatePlayerList()
+    local newOptions, newMap = getPlayerDropdownOptions()
+    playerMap = newMap
+    if Dropdown.SetValues then
+        Dropdown:SetValues(newOptions)
+    else
+        Dropdown.Options = newOptions
+    end
 end
+
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+
+task.spawn(function()
+    while true do
+        updatePlayerList()
+        task.wait(2)
+    end
+end)
+
+-- Stop Spectating Button
+Tabs.Killer:CreateButton({
+    Title = "Stop Spying",
+    Description = "Bumalik ang camera sa iyong character",
+    Callback = function()
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                workspace.CurrentCamera.CameraSubject = humanoid
+            end
+        end
+    end
+})
