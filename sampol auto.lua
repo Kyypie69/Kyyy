@@ -1665,7 +1665,6 @@ end)
 
 local killerTab = window:AddTab("Killer")
 
-
 _G.whitelistedPlayers = _G.whitelistedPlayers or {}
 _G.targetPlayer = _G.targetPlayer or ""
 
@@ -1895,6 +1894,59 @@ killerTab:AddTextBox("Remove Player from Whitelist (Name/Nickname)", function(te
     end
 end)
 
+killerTab:AddButton("Clear WhiteList", function()
+    _G.whitelistedPlayers = {}
+    updateWhitelistedPlayersLabel()
+end)
+
+-- Improved auto-kill all feature with better error handling and reliability
+local autoKillAllSwitch = killerTab:AddSwitch("Automatically Kill Everyone (Except Whitelist)", function(bool)
+    _G.autoKillAll = bool
+    
+    if bool then
+        spawn(function()
+            while _G.autoKillAll do
+                pcall(function()
+                    local players = game:GetService("Players"):GetPlayers()
+                    
+                    for _, player in ipairs(players) do
+                        if player == game.Players.LocalPlayer or not _G.autoKillAll then
+                            continue
+                        end
+                        
+                        -- Check if player is whitelisted
+                        local isWhitelisted = false
+                        for _, whitelistedInfo in ipairs(_G.whitelistedPlayers) do
+                            if whitelistedInfo:find(player.Name, 1, true) then
+                                isWhitelisted = true
+                                break
+                            end
+                        end
+                        
+                        -- Only kill if not whitelisted and has a character
+                        if not isWhitelisted and player.Character and 
+                           player.Character:FindFirstChild("HumanoidRootPart") and
+                           player.Character:FindFirstChild("Humanoid") and
+                           player.Character.Humanoid.Health > 0 then
+                            
+                            -- Try to kill the player with error handling
+                            pcall(function()
+                                killPlayer(player)
+                            end)
+                            
+                            -- Small wait between kills to prevent overload
+                            task.wait(0.05)
+                        end
+                    end
+                end)
+                
+                -- Wait a bit before the next cycle, but not too long
+                task.wait(0.2)
+            end
+        end)
+    end
+end)
+
 -- Target player management
 killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
     if text and text ~= "" then
@@ -1976,73 +2028,251 @@ killerTab:AddButton("Delete Target", function()
     end
 end)
 
--- Muscle Legends: Player Dropdown + "View Player" Feature for Elerium v2 UI
--- Place this in your repo, then require and call AddPlayerDropdown(tab) on your UI tab (e.g., mainTab)
+-- Inicializar variables de seguimiento
+local sessionStartTime = os.time()
+local sessionStartStrength = 0
+local sessionStartDurability = 0
+local sessionStartKills = 0
+local sessionStartRebirths = 0
+local sessionStartBrawls = 0
+local hasStartedTracking = false
+
+local statsTab = window:AddTab("Kill Stats")
+
+-- Crear una carpeta en  statsTab para estadísticas
+local statsFolder =  statsTab:AddFolder("Stats")
+
+-- Crear etiquetas para las estadísticas solicitadas
+statsFolder:AddLabel("Time Of Session")
+local sessionTimeLabel = statsFolder:AddLabel("Time: 00:00:00")
+
+statsFolder:AddLabel("Kills")
+local killsStatsLabel = statsFolder:AddLabel("Actual: Waiting...")
+local killsGainLabel = statsFolder:AddLabel("Gained: 0")
+
+-- Función para formatear números
+local function formatNumber(number)
+    if number >= 1e15 then return string.format("%.2fQ", number/1e15)
+    elseif number >= 1e12 then return string.format("%.2fT", number/1e12)
+    elseif number >= 1e9 then return string.format("%.2fB", number/1e9)
+    elseif number >= 1e6 then return string.format("%.2fM", number/1e6)
+    elseif number >= 1e3 then return string.format("%.2fK", number/1e3)
+    end
+    return tostring(math.floor(number))
+end
+
+local function formatNumberWithCommas(number)
+    local formatted = tostring(math.floor(number))
+    local k
+    while true do
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return formatted
+end
+
+local function formatTime(seconds)
+    local days = math.floor(seconds / 86400)
+    local hours = math.floor((seconds % 86400) / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = seconds % 60
+    
+    if days > 0 then
+        return string.format("%dd %02dh %02dm %02ds", days, hours, minutes, secs)
+    else
+        return string.format("%02d:%02d:%02d", hours, minutes, secs)
+    end
+end
+
+-- Inicializar seguimiento
+local function startTracking()
+    if not hasStartedTracking then
+        local player = game.Players.LocalPlayer
+        sessionStartStrength = player.leaderstats.Strength.Value
+        sessionStartDurability = player.Durability.Value
+        sessionStartKills = player.leaderstats.Kills.Value
+        sessionStartRebirths = player.leaderstats.Rebirths.Value
+        sessionStartBrawls = player.leaderstats.Brawls.Value
+        sessionStartTime = os.time()
+        hasStartedTracking = true
+    end
+end
+
+-- Función para actualizar estadísticas
+local function updateStats()
+    local player = game.Players.LocalPlayer
+    
+    -- Iniciar seguimiento si aún no ha comenzado
+    if not hasStartedTracking then
+        startTracking()
+    end
+    
+    -- Calcular valores actuales y ganancias
+    local currentStrength = player.leaderstats.Strength.Value
+    local currentDurability = player.Durability.Value
+    local currentKills = player.leaderstats.Kills.Value
+    local currentRebirths = player.leaderstats.Rebirths.Value
+    local currentBrawls = player.leaderstats.Brawls.Value
+    
+    local strengthGain = currentStrength - sessionStartStrength
+    local durabilityGain = currentDurability - sessionStartDurability
+    local killsGain = currentKills - sessionStartKills
+    local rebirthsGain = currentRebirths - sessionStartRebirths
+    local brawlsGain = currentBrawls - sessionStartBrawls
+    
+    -- Actualizar valores de estadísticas actuales
+    strengthStatsLabel.Text = string.format("Actual: %s", formatNumber(currentStrength))
+    durabilityStatsLabel.Text = string.format("Actual: %s", formatNumber(currentDurability))
+    rebirthsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentRebirths))
+    killsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentKills))
+    brawlsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentBrawls))
+    
+    -- Actualizar valores de ganancias
+    strengthGainLabel.Text = string.format("Gained: %s", formatNumber(strengthGain))
+    durabilityGainLabel.Text = string.format("Gained: %s", formatNumber(durabilityGain))
+    rebirthsGainLabel.Text = string.format("Gained: %s", formatNumber(rebirthsGain))
+    killsGainLabel.Text = string.format("Gained: %s", formatNumber(killsGain))
+    brawlsGainLabel.Text = string.format("Gained: %s", formatNumber(brawlsGain))
+    
+    -- Actualizar tiempo de sesión
+    local elapsedTime = os.time() - sessionStartTime
+    local timeString = formatTime(elapsedTime)
+    sessionTimeLabel.Text = string.format("Time: %s", timeString)
+end
+
+-- Actualizar estadísticas inicialmente
+updateStats()
+
+-- Actualizar estadísticas cada 2 segundos
+spawn(function()
+    while wait(2) do
+        updateStats()
+    end
+end)
+
+-- Agregar botones para funcionalidades adicionales
+statsFolder:AddButton("Reset Stats", function()
+    local player = game.Players.LocalPlayer
+    sessionStartStrength = player.leaderstats.Strength.Value
+    sessionStartDurability = player.Durability.Value
+    sessionStartKills = player.leaderstats.Kills.Value
+    sessionStartRebirths = player.leaderstats.Rebirths.Value
+    sessionStartBrawls = player.leaderstats.Brawls.Value
+    sessionStartTime = os.time()
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Statistics Tracking",
+        Text = "Session progress tracking has been reset!",
+        Duration = 0
+    })
+end)
+
+statsFolder:AddButton("Copy Statistics", function()
+    local player = game.Players.LocalPlayer
+    local statsText = "Statistics of Muscle Legends:\n\n"
+    
+    statsText = statsText .. "Strength: " .. formatNumberWithCommas(player.leaderstats.Strength.Value) .. "\n"
+    statsText = statsText .. "Durability: " .. formatNumberWithCommas(player.Durability.Value) .. "\n"
+    statsText = statsText .. "Rebirths: " .. formatNumberWithCommas(player.leaderstats.Rebirths.Value) .. "\n"
+    statsText = statsText .. "Kills: " .. formatNumberWithCommas(player.leaderstats.Kills.Value) .. "\n"
+    statsText = statsText .. "Brawls: " .. formatNumberWithCommas(player.leaderstats.Brawls.Value) .. "\n\n"
+    
+    -- Agregar estadísticas de sesión si el seguimiento ha comenzado
+    if hasStartedTracking then
+        local elapsedTime = os.time() - sessionStartTime
+        local strengthGain = player.leaderstats.Strength.Value - sessionStartStrength
+        local durabilityGain = player.Durability.Value - sessionStartDurability
+        local killsGain = player.leaderstats.Kills.Value - sessionStartKills
+        local rebirthsGain = player.leaderstats.Rebirths.Value - sessionStartRebirths
+        local brawlsGain = player.leaderstats.Brawls.Value - sessionStartBrawls
+        
+        statsText = statsText .. "--- Session Statistics ---\n"
+        statsText = statsText .. "Time Of Session: " .. formatTime(elapsedTime) .. "\n"
+        statsText = statsText .. "Strength Gained: " .. formatNumberWithCommas(strengthGain) .. "\n"
+        statsText = statsText .. "Durability Gained: " .. formatNumberWithCommas(durabilityGain) .. "\n"
+        statsText = statsText .. "Rebirths Gained: " .. formatNumberWithCommas(rebirthsGain) .. "\n"
+        statsText = statsText .. "Kills Gained: " .. formatNumberWithCommas(killsGain) .. "\n"
+        statsText = statsText .. "Brawls Gained: " .. formatNumberWithCommas(brawlsGain) .. "\n"
+    end
+    
+    setclipboard(statsText)
+end)
 
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- Get display names and usernames for dropdown
-local function getPlayerList()
-    local list = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        table.insert(list, p.DisplayName .. " (" .. p.Name .. ")")
+-- Helper to get player display, fallback to Username if needed
+local function getDisplay(player)
+    if player.DisplayName ~= player.Name then
+        return ("%s (@%s)"):format(player.DisplayName, player.Name)
+    else
+        return player.Name
     end
-    return list
 end
 
--- Add the dropdown and button to a given tab
-local function AddPlayerDropdown(mainTab)
-    local selectedPlayerName = nil
-
-    -- Create dropdown
-    local dropdown = killerTab:AddDropdown("Select Player", getPlayerList(), function(selection)
-        local username = selection:match("%(([^)]+)%)")
-        selectedPlayerName = username
-    end)
-
-    -- Auto-refresh dropdown on join/leave
-    local function refreshDropdown()
-        dropdown:Clear()
-        for _, entry in ipairs(getPlayerList()) do
-            dropdown:Add(entry)
+-- Generate options for dropdown, map display to player
+local function getPlayerDropdownOptions()
+    local options, map = {}, {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local display = getDisplay(player)
+            table.insert(options, display)
+            map[display] = player
         end
     end
+    return options, map
+end
 
-    Players.PlayerAdded:Connect(refreshDropdown)
-    Players.PlayerRemoving:Connect(refreshDropdown)
+-- Initial options and mapping
+local dropdownOptions, playerMap = getPlayerDropdownOptions()
 
-    -- "View Player" button
-    killerTab:AddButton("View Player", function()
-        if selectedPlayerName then
-            local target = Players:FindFirstChild(selectedPlayerName)
-            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                local camera = workspace.CurrentCamera
-                camera.CameraSubject = target.Character.HumanoidRootPart
-                camera.CameraType = Enum.CameraType.Custom
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "View Player",
-                    Text = "Now viewing: " .. target.DisplayName,
-                    Duration = 3
-                })
-            else
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "View Player",
-                    Text = "Player not found or not loaded!",
-                    Duration = 3
-                })
+local Dropdown = Tabs.Killer:CreateDropdown("SpectatePlayer", {
+    Title = "Spectate Player",
+    Description = "Piliin ang player na panoorin",
+    Options = dropdownOptions,
+    Default = "",
+    Callback = function(Value)
+        local targetPlayer = playerMap[Value]
+        if targetPlayer and targetPlayer.Character then
+            local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                workspace.CurrentCamera.CameraSubject = humanoid
             end
-        else
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "View Player",
-                Text = "No player selected!",
-                Duration = 3
-            })
         end
-    end, "Switch camera to selected player")
+    end
+})
+
+-- Update dropdown and map on player changes
+local function updatePlayerList()
+    local newOptions, newMap = getPlayerDropdownOptions()
+    playerMap = newMap
+    if Dropdown.SetValues then
+        Dropdown:SetValues(newOptions)
+    else
+        Dropdown.Options = newOptions
+    end
 end
 
--- Example usage:
--- local AddPlayerDropdown = require(path.to.PlayerDropdown)
--- AddPlayerDropdown(killerTab)
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
 
-return AddPlayerDropdown
+task.spawn(function()
+    while true do
+        updatePlayerList()
+        task.wait(2)
+    end
+end)
+
+-- Stop Spectating Button
+Tabs.Killer:CreateButton({
+    Title = "Stop Spying",
+    Description = "Bumalik ang camera sa iyong character",
+    Callback = function()
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                workspace.CurrentCamera.CameraSubject = humanoid
+            end
+        end
+    end
+})
