@@ -1,72 +1,23 @@
--- Advanced Kill GUI for Elerium (Orion) + Modules: Auto Farm, Godmode, Anti-AFK, ESP, Teleport, Themes
+-- Main script, Rayfield UI, feature loops, and modular glue
 
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexro/Orion/main/source"))()
-local Window = OrionLib:MakeWindow({Name = "Title of the library", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest"})
-local Tab = Window:MakeTab({
-	Name = "Tab 1",
-	Icon = "rbxassetid://4483345998",
-	PremiumOnly = false
-})
+-- REQUIRE MODULES
+local PlayerUtils = loadstring(readfile("PlayerUtils.lua"))()
+local WhitelistManager = loadstring(readfile("WhitelistManager.lua"))()
+local ESPManager = loadstring(readfile("ESPManager.lua"))()
 
--- =========== Themes ===========
-local themes = {
-    ["Classic Dark"] = {Main = Color3.fromRGB(30, 30, 30), Accent = Color3.fromRGB(0, 255, 128)},
-    ["Vaporwave"]    = {Main = Color3.fromRGB(64, 44, 84), Accent = Color3.fromRGB(255, 0, 255)},
-    ["Sky Blue"]     = {Main = Color3.fromRGB(54, 81, 151), Accent = Color3.fromRGB(49, 191, 243)},
-    ["Light"]        = {Main = Color3.fromRGB(230,230,230), Accent = Color3.fromRGB(0, 145, 255)},
-}
-local currentTheme = "Classic Dark"
-local function applyTheme(themeName)
-    local theme = themes[themeName]
-    if theme then
-        OrionLib:MakeNotification({Name = "Theme Changed", Content = "Theme set to "..themeName, Image = "rbxassetid://4483345998", Time = 2})
-        OrionLib:ChangeColor("Window", theme.Main)
-        OrionLib:ChangeColor("Accent", theme.Accent)
-    end
-end
+-- LOAD RAYFIELD (make sure Rayfield is in your workspace or loadstring it here)
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
 
--- =========== State ===========
+-- SERVICES
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local whitelist = {}
-local autoKill = false
-local targetMode = false
-local autoWhitelistFriends = false
+
+-- STATE
+local autoKill, targetMode, autoFarm, godmodeEnabled, antiAfkEnabled = false, false, false, false, false
 local targetPlayer = nil
 
-local function notify(title, content)
-    OrionLib:MakeNotification({Name = title, Content = content, Image = "rbxassetid://4483345998", Time = 3})
-end
-
-local function isWhitelisted(player)
-    return whitelist[player.Name]
-end
-
-local function getPlayer(name)
-    name = name:lower()
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p.Name:lower() == name or (p.DisplayName and p.DisplayName:lower() == name) then
-            return p
-        end
-    end
-    return nil
-end
-
-local function perPlayerStatus(player)
-    local status = {}
-    if player == LocalPlayer then table.insert(status, "You") end
-    if isWhitelisted(player) then table.insert(status, "Whitelisted") end
-    if player:IsFriendsWith(LocalPlayer.UserId) then table.insert(status, "Friend") end
-    if targetPlayer and player.Name:lower() == targetPlayer:lower() then table.insert(status, "Target") end
-    if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-        table.insert(status, "Alive")
-    else
-        table.insert(status, "Dead")
-    end
-    return table.concat(status, ", ")
-end
-
-local function killPlayer(player)
+-- Functions
+local function KillPlayer(player)
     local myChar = LocalPlayer.Character
     if not myChar then return end
     local myHand = myChar:FindFirstChild("LeftHand") or myChar:FindFirstChild("RightHand")
@@ -76,342 +27,203 @@ local function killPlayer(player)
     end
 end
 
--- =========== Auto Kill Main Loops ===========
+-- UI Construction
+local Window = Rayfield:CreateWindow({
+    Name = "Advanced Kill GUI (Rayfield Edition)",
+    LoadingTitle = "Initializing...",
+    LoadingSubtitle = "by Kyypie69",
+})
+
+-- Player List Helper
+local function GetPlayerOptions()
+    local opts = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(opts, p.Name .. " (" .. p.DisplayName .. ")")
+        end
+    end
+    return opts
+end
+
+-- Tabs
+local CombatTab = Window:CreateTab("Combat", 4483345998)
+local UtilityTab = Window:CreateTab("Utility", 4483345998)
+local WhitelistTab = Window:CreateTab("Whitelist", 4483345998)
+local ESPTab = Window:CreateTab("ESP", 4483345998)
+
+-- Combat Features
+CombatTab:CreateToggle({
+    Name = "Auto Kill (Except Whitelisted)",
+    CurrentValue = false,
+    Callback = function(Value)
+        autoKill = Value
+    end
+})
+
+CombatTab:CreateToggle({
+    Name = "Target Kill Mode",
+    CurrentValue = false,
+    Callback = function(Value)
+        targetMode = Value
+    end
+})
+
+CombatTab:CreateDropdown({
+    Name = "Target Player",
+    Options = GetPlayerOptions(),
+    CurrentOption = nil,
+    Callback = function(Option)
+        targetPlayer = PlayerUtils.GetPlayerByNameOrDisplay(Option:match("^(.-) %("))
+        ESPManager:Refresh(WhitelistManager, targetPlayer)
+    end
+})
+
+-- Utility Features
+UtilityTab:CreateToggle({
+    Name = "Auto Farm",
+    CurrentValue = false,
+    Callback = function(Value)
+        autoFarm = Value
+    end
+})
+
+UtilityTab:CreateToggle({
+    Name = "Godmode",
+    CurrentValue = false,
+    Callback = function(Value)
+        godmodeEnabled = Value
+    end
+})
+
+UtilityTab:CreateToggle({
+    Name = "Anti-AFK",
+    CurrentValue = false,
+    Callback = function(Value)
+        antiAfkEnabled = Value
+        if Value then
+            LocalPlayer.Idled:Connect(function()
+                game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+                wait(0.5)
+                game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+            end)
+        end
+    end
+})
+
+-- ESP Features
+ESPTab:CreateToggle({
+    Name = "Enable ESP",
+    CurrentValue = false,
+    Callback = function(Value)
+        ESPManager.Enabled = Value
+        ESPManager:Refresh(WhitelistManager, targetPlayer)
+    end
+})
+
+Players.PlayerAdded:Connect(function()
+    ESPManager:Refresh(WhitelistManager, targetPlayer)
+end)
+Players.PlayerRemoving:Connect(function()
+    ESPManager:Refresh(WhitelistManager, targetPlayer)
+end)
+
+-- Whitelist UI
+WhitelistTab:CreateInput({
+    Name = "Add Player by Name",
+    PlaceholderText = "Username or DisplayName",
+    RemoveTextAfterFocusLost = true,
+    Callback = function(Value)
+        local p = PlayerUtils.GetPlayerByNameOrDisplay(Value)
+        if p then
+            WhitelistManager:Add(p.Name)
+            ESPManager:Refresh(WhitelistManager, targetPlayer)
+            Rayfield:Notify({Title="Whitelist", Content="Added "..p.Name.." to whitelist"})
+        else
+            Rayfield:Notify({Title="Whitelist", Content="Player not found"})
+        end
+    end
+})
+
+WhitelistTab:CreateDropdown({
+    Name = "Remove Player from Whitelist",
+    Options = WhitelistManager:List(),
+    CurrentOption = nil,
+    Callback = function(Name)
+        WhitelistManager:Remove(Name)
+        ESPManager:Refresh(WhitelistManager, targetPlayer)
+        Rayfield:Notify({Title="Whitelist", Content="Removed "..Name.." from whitelist"})
+    end
+})
+
+WhitelistTab:CreateButton({
+    Name = "Clear All Whitelisted",
+    Callback = function()
+        WhitelistManager:Clear()
+        ESPManager:Refresh(WhitelistManager, targetPlayer)
+        Rayfield:Notify({Title="Whitelist", Content="Whitelist cleared"})
+    end
+})
+
+WhitelistTab:CreateParagraph({Title="Current Whitelist", Content=function()
+    local list = WhitelistManager:List()
+    return #list > 0 and table.concat(list, "\n") or "None"
+end})
+
+-- Combat/Utility Loops
 task.spawn(function()
     while true do
+        -- Kill Aura
         if autoKill then
             for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and not isWhitelisted(player) then
+                if player ~= LocalPlayer and not WhitelistManager:IsWhitelisted(player) then
                     if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                        killPlayer(player)
+                        KillPlayer(player)
                     end
                 end
             end
         elseif targetMode and targetPlayer then
-            local player = getPlayer(targetPlayer)
-            if player and player ~= LocalPlayer and not isWhitelisted(player) then
-                if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                    killPlayer(player)
+            if targetPlayer ~= LocalPlayer and not WhitelistManager:IsWhitelisted(targetPlayer) then
+                if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
+                    KillPlayer(targetPlayer)
                 end
             end
         end
-        task.wait(0.15)
+        wait(0.15)
     end
 end)
 
--- =========== Helper: Dynamic Player List ===========
-local function getPlayerOptions(filter)
-    local opts = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            local info = p.Name.." | "..p.DisplayName.." ["..perPlayerStatus(p).."]"
-            if not filter or info:lower():find(filter:lower(), 1, true) then
-                table.insert(opts, info)
-            end
-        end
-    end
-    if #opts == 0 then table.insert(opts, "No players found") end
-    return opts
-end
-
--- =========== UI ===========
-local Window = OrionLib:MakeWindow({Name = "Muscle Legends Advanced Kill GUI", HidePremium = false, SaveConfig = true, ConfigFolder = "ML-KillAura-Config"})
-
--- Theme Tab
-local ThemeTab = Window:MakeTab({Name = "Themes", Icon = "rbxassetid://6031075938", PremiumOnly = false})
-ThemeTab:AddDropdown({
-    Name = "Select Theme",
-    Default = currentTheme,
-    Options = (function() local t={} for k,_ in pairs(themes) do table.insert(t,k) end return t end)(),
-    Callback = function(Value)
-        currentTheme = Value
-        applyTheme(Value)
-    end
-})
-
--- Auto Kill Tab
-local Tab = Window:MakeTab({Name = "Auto Kill", Icon = "rbxassetid://6035047409", PremiumOnly = false})
-
-Tab:AddToggle({
-    Name = "Auto Kill All (Except Whitelisted)",
-    Default = false,
-    Callback = function(Value)
-        autoKill = Value
-        notify("Auto Kill", Value and "Auto kill enabled" or "Auto kill disabled")
-    end
-})
-
-Tab:AddToggle({
-    Name = "Target Kill Mode",
-    Default = false,
-    Callback = function(Value)
-        targetMode = Value
-        notify("Target Kill", Value and "Target kill enabled" or "Target kill disabled")
-    end
-})
-
-Tab:AddToggle({
-    Name = "Auto Whitelist Friends",
-    Default = false,
-    Callback = function(Value)
-        autoWhitelistFriends = Value
-        if Value then
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p:IsFriendsWith(LocalPlayer.UserId) then
-                    whitelist[p.Name] = true
+task.spawn(function()
+    while true do
+        -- Auto Farm loop
+        if autoFarm then
+            for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+                if tool:IsA("Tool") then
+                    LocalPlayer.Character.Humanoid:EquipTool(tool)
+                    wait(0.1)
+                    pcall(function() tool:Activate() end)
                 end
             end
-            notify("Whitelist", "All friends whitelisted")
         end
-    end
-})
-
--- Target Player Dropdown with Search
-local lastSearch = ""
-local playerDropdown
-playerDropdown = Tab:AddDropdown({
-    Name = "Target Player (Status shown)",
-    Default = nil,
-    Options = getPlayerOptions(),
-    Callback = function(Value)
-        local username = Value:match("(.+) |")
-        if username and username ~= "No players found" then
-            targetPlayer = username
-            notify("Target", "Target set to: "..username)
-        end
-    end
-})
-
-Tab:AddTextbox({
-    Name = "Filter/Search Player",
-    Default = "",
-    TextDisappear = false,
-    Callback = function(Value)
-        lastSearch = Value
-        playerDropdown:Refresh(getPlayerOptions(Value))
-    end
-})
-
-Tab:AddTextbox({
-    Name = "Add Player to Whitelist (Username or Display Name)",
-    Default = "",
-    TextDisappear = true,
-    Callback = function(Value)
-        local p = getPlayer(Value)
-        if p then
-            whitelist[p.Name] = true
-            notify("Whitelist", "Whitelisted: "..p.Name)
-        else
-            notify("Error", "Player not found")
-        end
-    end
-})
-
-Tab:AddButton({
-    Name = "Whitelist All Players",
-    Callback = function()
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then whitelist[p.Name] = true end
-        end
-        notify("Whitelist", "All players whitelisted")
-    end
-})
-
-Tab:AddButton({
-    Name = "Clear All Whitelisted",
-    Callback = function()
-        for k in pairs(whitelist) do whitelist[k] = nil end
-        notify("Whitelist", "Whitelist cleared")
-    end
-})
-
-local whitelistedListBox = Tab:AddParagraph("Whitelisted Players", "None")
-local function updateWhitelistBox()
-    local text = ""
-    for name, _ in pairs(whitelist) do
-        text = text .. name .. "\n"
-    end
-    whitelistedListBox:Set(text == "" and "None" or text)
-end
-
-Players.PlayerAdded:Connect(function()
-    playerDropdown:Refresh(getPlayerOptions(lastSearch))
-    if autoWhitelistFriends then
-        local p = Players:GetPlayers()[#Players:GetPlayers()]
-        if p:IsFriendsWith(LocalPlayer.UserId) then
-            whitelist[p.Name] = true
-            notify("Whitelist", "Friend whitelisted: "..p.Name)
-        end
+        wait(0.5)
     end
 end)
-Players.PlayerRemoving:Connect(function()
-    playerDropdown:Refresh(getPlayerOptions(lastSearch))
-end)
-game:GetService("RunService").RenderStepped:Connect(updateWhitelistBox)
 
-applyTheme(currentTheme)
-notify("Loaded", "Advanced Kill GUI loaded! Customize in the Themes tab.")
-
--- =========== MODULES TAB ===========
-local ModulesTab = Window:MakeTab({
-    Name = "Modules",
-    Icon = "rbxassetid://6035078885",
-    PremiumOnly = false
-})
-
--- ESP Module
-local espEnabled = false
-local espObjects = {}
-local function createESP(plr)
-    if plr == LocalPlayer then return end
-    if not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") then return end
-    local box = Instance.new("BoxHandleAdornment")
-    box.Name = "ESPBox"
-    box.Adornee = plr.Character.HumanoidRootPart
-    box.AlwaysOnTop = true
-    box.ZIndex = 5
-    box.Size = Vector3.new(3,6,3)
-    box.Transparency = 0.7
-    box.Color3 = Color3.fromRGB(255,0,0)
-    box.Parent = game:GetService("CoreGui")
-    espObjects[plr] = box
-end
-local function removeESP(plr)
-    if espObjects[plr] then
-        espObjects[plr]:Destroy()
-        espObjects[plr] = nil
-    end
-end
-local function refreshESP()
-    for _, box in pairs(espObjects) do
-        if box then box:Destroy() end
-    end
-    table.clear(espObjects)
-    if espEnabled then
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then createESP(p) end
-        end
-    end
-end
-ModulesTab:AddToggle({
-    Name = "Player ESP",
-    Default = false,
-    Callback = function(Value)
-        espEnabled = Value
-        refreshESP()
-        notify("ESP", Value and "ESP Enabled" or "ESP Disabled")
-    end
-})
-Players.PlayerAdded:Connect(function(plr)
-    if espEnabled then createESP(plr) end
-end)
-Players.PlayerRemoving:Connect(function(plr)
-    removeESP(plr)
-end)
-
--- Teleport Module
-local teleportDropdown
-teleportDropdown = ModulesTab:AddDropdown({
-    Name = "Teleport To Player",
-    Default = nil,
-    Options = getPlayerOptions(),
-    Callback = function(Value)
-        local username = Value:match("(.+) |")
-        local p = username and getPlayer(username)
-        if p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
-            notify("Teleport", "Teleported to: "..p.Name)
-        else
-            notify("Teleport", "Target player not found or not loaded.")
-        end
-    end
-})
-Players.PlayerAdded:Connect(function() teleportDropdown:Refresh(getPlayerOptions()) end)
-Players.PlayerRemoving:Connect(function() teleportDropdown:Refresh(getPlayerOptions()) end)
-
--- ========== NEW: Auto Farm ==========
-local autoFarm = false
-local autoFarmLoop
-ModulesTab:AddToggle({
-    Name = "Auto Farm (auto train stats)",
-    Default = false,
-    Callback = function(Value)
-        autoFarm = Value
-        notify("Auto Farm", Value and "Auto Farm enabled" or "Auto Farm disabled")
-        if Value and not autoFarmLoop then
-            autoFarmLoop = task.spawn(function()
-                while autoFarm do
-                    -- Example: try to activate all tools in backpack for training
-                    for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-                        if tool:IsA("Tool") then
-                            LocalPlayer.Character.Humanoid:EquipTool(tool)
-                            task.wait(0.1)
-                            -- Simulate click (if tool supports ClickDetector or RemoteEvent)
-                            pcall(function() tool:Activate() end)
-                        end
-                    end
-                    task.wait(0.5)
-                end
-            end)
-        end
-        if not Value and autoFarmLoop then
-            autoFarmLoop = nil
-        end
-    end
-})
-
--- ========== NEW: Godmode ==========
-local godmodeEnabled = false
-ModulesTab:AddToggle({
-    Name = "Godmode (no damage)",
-    Default = false,
-    Callback = function(Value)
-        godmodeEnabled = Value
-        notify("Godmode", Value and "Godmode enabled" or "Godmode disabled")
-    end
-})
--- Godmode loop: set health to max and prevent death
 task.spawn(function()
     while true do
         if godmodeEnabled then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("Humanoid") then
                 char.Humanoid.Health = char.Humanoid.MaxHealth
-                -- Remove debuffs, breakjoints, etc
                 if char:FindFirstChild("BreakJointsOnDeath") then
                     char.BreakJointsOnDeath = false
                 end
-                -- Remove "Dead" state
                 if char.Humanoid:GetState() == Enum.HumanoidStateType.Dead then
                     char.Humanoid.Health = char.Humanoid.MaxHealth
                 end
             end
         end
-        task.wait(0.1)
+        wait(0.1)
     end
 end)
 
--- ========== NEW: Anti-AFK ==========
-local antiAfkEnabled = false
-local afkConn
-ModulesTab:AddToggle({
-    Name = "Anti-AFK",
-    Default = false,
-    Callback = function(Value)
-        antiAfkEnabled = Value
-        notify("Anti-AFK", Value and "Anti-AFK enabled" or "Anti-AFK disabled")
-        if Value then
-            if afkConn then afkConn:Disconnect() end
-            afkConn = LocalPlayer.Idled:Connect(function()
-                game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-                task.wait(0.5)
-                game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-            end)
-        elseif afkConn then
-            afkConn:Disconnect()
-            afkConn = nil
-        end
-    end
-})
-
--- End of script
+Rayfield:Notify({Title = "Loaded!", Content = "Advanced Kill GUI (Rayfield Edition) loaded."})
