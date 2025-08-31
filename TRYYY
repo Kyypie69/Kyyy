@@ -1,0 +1,172 @@
+-- Elerium UI Loader (non-destructive, can be run alongside your old UI)
+local Elerium = loadstring(game:HttpGet("https://raw.githubusercontent.com/XTheMasterX/Elerium/main/source.lua"))()
+local EleriumWindow = Elerium:Window({Name = "Killer Hub (Elerium)", HidePremium = false, SaveConfig = false, IntroText = "KILL HUB"})
+local EleriumKillerTab = EleriumWindow:Tab({Name = "Killer"})
+local EleriumCrystalsTab = EleriumWindow:Tab({Name = "Crystals"})
+
+-- Shared variables
+local elerium_currentRadius = 75
+local elerium_targetPlayer = nil
+getgenv().elerium_killNearby = false
+getgenv().elerium_doAnimation = false
+local whitelist = whitelist or {}
+
+local function EleriumNotify(title, text)
+    Elerium:Notify({Title = title, Description = text, Duration = 2})
+end
+
+-- Kill Aura Radius Input (Elerium)
+EleriumKillerTab:Textbox({
+    Name = "Kill Aura Radius",
+    Default = tostring(elerium_currentRadius),
+    TextDisappear = false,
+    Callback = function(Value)
+        elerium_currentRadius = math.clamp(tonumber(Value) or 75, 1, 150)
+        EleriumNotify("Radius Updated", "Kill aura radius set to: " .. elerium_currentRadius)
+    end
+})
+
+-- Kill Nearby Toggle (Elerium)
+EleriumKillerTab:Toggle({
+    Name = "Matrix Kill Aura",
+    Default = false,
+    Callback = function(v)
+        getgenv().elerium_killNearby = v
+        local radiusVisual = Instance.new("Part")
+        radiusVisual.Anchored = true
+        radiusVisual.CanCollide = false
+        radiusVisual.Transparency = 0.8
+        radiusVisual.Material = Enum.Material.ForceField
+        radiusVisual.Color = Color3.fromRGB(0, 255, 0)
+        radiusVisual.Size = Vector3.new(1, 0.1, 1)
+        task.spawn(function()
+            while getgenv().elerium_killNearby do
+                pcall(function()
+                    local myCharacter = game.Players.LocalPlayer.Character
+                    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+                    if myRoot then
+                        radiusVisual.Parent = workspace
+                        radiusVisual.Size = Vector3.new(elerium_currentRadius * 2, 0.1, elerium_currentRadius * 2)
+                        radiusVisual.CFrame = myRoot.CFrame * CFrame.new(0, -2, 0)
+                        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                            if player ~= game.Players.LocalPlayer and not whitelist[player.Name] then
+                                local char = player.Character
+                                local root = char and char:FindFirstChild("HumanoidRootPart")
+                                if root and myRoot and myCharacter:FindFirstChild("LeftHand") then
+                                    local distance = (root.Position - myRoot.Position).Magnitude
+                                    if distance <= elerium_currentRadius then
+                                        local killEffect = Instance.new("Part")
+                                        killEffect.Anchored = true
+                                        killEffect.CanCollide = false
+                                        killEffect.Transparency = 0.5
+                                        killEffect.Material = Enum.Material.Neon
+                                        killEffect.Color = Color3.fromRGB(0, 255, 0)
+                                        killEffect.CFrame = root.CFrame
+                                        killEffect.Size = Vector3.new(5, 5, 5)
+                                        killEffect.Parent = workspace
+                                        game:GetService("TweenService"):Create(killEffect, TweenInfo.new(0.5), {
+                                            Size = Vector3.new(0, 0, 0),
+                                            Transparency = 1
+                                        }):Play()
+                                        game:GetService("Debris"):AddItem(killEffect, 0.5)
+                                        firetouchinterest(root, myCharacter.LeftHand, 0)
+                                        task.wait()
+                                        firetouchinterest(root, myCharacter.LeftHand, 1)
+                                    end
+                                end
+                            end
+                        end
+                        task.wait(0.1)
+                    end
+                end)
+                task.wait(0.1)
+            end
+            radiusVisual:Destroy()
+        end)
+    end
+})
+
+-- Target Input (Elerium)
+EleriumKillerTab:Textbox({
+    Name = "Target Player",
+    Default = "",
+    TextDisappear = false,
+    Callback = function(Value)
+        elerium_targetPlayer = Value
+    end
+})
+
+-- Teleport Animate Toggle (Elerium)
+EleriumKillerTab:Toggle({
+    Name = "Start Banging",
+    Default = false,
+    Callback = function(Value)
+        getgenv().elerium_doAnimation = Value
+        if elerium_targetPlayer then
+            local character = game.Players.LocalPlayer.Character
+            local humanoid = character:WaitForChild("Humanoid")
+            local target = game.Players:FindFirstChild(elerium_targetPlayer)
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                local handsUp = Instance.new('Animation')
+                handsUp.AnimationId = 'rbxassetid://148840371'
+                local anim = humanoid:LoadAnimation(handsUp)
+                spawn(function()
+                    while getgenv().elerium_doAnimation do
+                        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                            character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                        end
+                        task.wait()
+                    end
+                end)
+                anim:Play()
+                anim:AdjustSpeed(0.3)
+                while getgenv().elerium_doAnimation do
+                    character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
+                    wait(0.2)
+                    character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1)
+                    wait(0.2)
+                end
+                anim:Stop()
+            end
+        end
+    end
+})
+
+-- Unequip All Pets (Elerium)
+local function elerium_unequipAllPets()
+    local petsFolder = game:GetService("Players").LocalPlayer:FindFirstChild("petsFolder")
+    if not petsFolder then return end
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                game:GetService("ReplicatedStorage").rEvents.equipPetEvent:fireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.1)
+end
+
+-- Pet Buttons (Elerium)
+local elerium_petTypes = {
+    ["Swift Samurai"] = "Equip All Swift Samurai",
+    ["Tribal Overlord"] = "Equip All Tribal Overlord",
+    ["Mighty Monster"] = "Equip All Mighty Monster",
+    ["Wild Wizard"] = "Equip All Wild Wizard"
+}
+
+for petName, buttonTitle in pairs(elerium_petTypes) do
+    EleriumCrystalsTab:Button({
+        Name = buttonTitle,
+        Callback = function()
+            elerium_unequipAllPets()
+            local petsFolder = game:GetService("Players").LocalPlayer:FindFirstChild("petsFolder")
+            if petsFolder and petsFolder:FindFirstChild("Unique") then
+                for _, pet in pairs(petsFolder.Unique:GetChildren()) do
+                    if pet.Name == petName then
+                        game:GetService("ReplicatedStorage").rEvents.equipPetEvent:fireServer("equipPet", pet)
+                    end
+                end
+            end
+        end
+    })
+end
