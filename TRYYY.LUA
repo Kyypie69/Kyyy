@@ -32,7 +32,7 @@ setupAntiAFK()
 
 -- Create Main Window
 local window = library:AddWindow("50kg x Autokill Script", {
-    main_color = Color3.fromRGB(15, 80, 160),
+    main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(400, 382),
     can_resize = true,
 })
@@ -2013,43 +2013,59 @@ local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", fu
     end
 end)
 
--- Manual kill buttons
-killerTab:AddButton("Remove Everyone (Except Whitelist)", function()
-    pcall(function()
-        for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer then
-                local isWhitelisted = false
-                for _, whitelistedInfo in ipairs(_G.whitelistedPlayers) do
-                    if whitelistedInfo:find(player.Name, 1, true) then
-                        isWhitelisted = true
-                        break
-                    end
-                end
-                
-                if not isWhitelisted and player.Character and 
-                   player.Character:FindFirstChild("HumanoidRootPart") then
-                    killPlayer(player)
-                    task.wait(0.05)
-                end
-            end
-        end
-    end)
-end)
+local Players = game:GetService("Players")
+local LP      = Players.LocalPlayer
+local cam     = workspace.CurrentCamera
 
-killerTab:AddButton("Delete Target", function()
-    if _G.targetPlayer ~= "" then
-        pcall(function()
-            local targetName = _G.targetPlayer:match("^([^%(]+)")
-            if targetName then
-                targetName = targetName:gsub("%s+$", "")
-                local targetPlayer = game.Players:FindFirstChild(targetName)
-                if targetPlayer then
-                    killPlayer(targetPlayer)
-                end
-            end
+--------------------------------------------------------------------
+--  helper: build / refresh player list
+--------------------------------------------------------------------
+local specDropdown, playerMap -- forward refs
+
+local function refreshPlayerList()
+    local list, map = {}, {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LP then
+            local show = (p.DisplayName ~= p.Name)
+                    and ("%s  (@%s)"):format(p.DisplayName, p.Name)
+                    or  p.Name
+            table.insert(list, show)
+            map[show] = p
+        end
+    end
+    playerMap = map
+
+    if specDropdown then          -- update existing dropdown
+        specDropdown:Clear()
+        for _, opt in ipairs(list) do specDropdown:Add(opt) end
+    else                          -- first-time creation
+        specDropdown = killerTab:AddDropdown("SpectateDrop", function(text)
+            -- nothing here – we use buttons instead
         end)
+        for _, opt in ipairs(list) do specDropdown:Add(opt) end
+    end
+end
+
+killerTab:AddButton("View Player", function()
+    if not specDropdown then return end
+    local chosen = specDropdown.Value
+    local target = playerMap and playerMap[chosen]
+    if target and target.Character then
+        local hum = target.Character:FindFirstChildOfClass("Humanoid")
+        if hum then cam.CameraSubject = hum end
     end
 end)
+
+killerTab:AddButton("Unview / Reset Camera", function()
+    if LP.Character then
+        local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+        if hum then cam.CameraSubject = hum end
+    end
+end)
+
+Players.PlayerAdded:Connect(refreshPlayerList)
+Players.PlayerRemoving:Connect(refreshPlayerList)
+refreshPlayerList() 
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
