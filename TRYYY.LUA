@@ -1947,49 +1947,23 @@ local autoKillAllSwitch = killerTab:AddSwitch("Automatically Kill Everyone (Exce
     end
 end)
 
--- ---------------------------------------------------------------------------
--- 1.  Helper – build / refresh the drop-down choices
--- ---------------------------------------------------------------------------
-local function buildPlayerList()
-    local choices = {}
-    for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-        if p ~= game.Players.LocalPlayer then
-            table.insert(choices, p.Name .. "  (" .. p.DisplayName .. ")")
+-- Target player management
+killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
+    if text and text ~= "" then
+        local player = findClosestPlayer(text)
+        if player then
+            _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
+            updateTargetPlayerLabel()
         end
     end
-    return choices
-end
-
--- ---------------------------------------------------------------------------
--- 2.  Replace the old TextBox with a DropDown
--- ---------------------------------------------------------------------------
-local targetDropDown
-targetDropDown = killerTab:AddDropdown("Select Target Player", buildPlayerList(), function(option)
-    if option and option ~= "" then
-        _G.targetPlayer = option                       -- already in “Name (Display)” format
-        updateTargetPlayerLabel()
-    end
 end)
 
--- optional: auto-refresh the list whenever someone joins/leaves
-game:GetService("Players").PlayerAdded:Connect(function()
-    targetDropDown:Refresh(buildPlayerList())
-end)
-game:GetService("Players").PlayerRemoving:Connect(function()
-    targetDropDown:Refresh(buildPlayerList())
-end)
-
--- ---------------------------------------------------------------------------
--- 3.  “Remove Target” button stays exactly the same
--- ---------------------------------------------------------------------------
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
     updateTargetPlayerLabel()
 end)
 
--- ---------------------------------------------------------------------------
--- 4.  Everything below this line is UNTOUCHED – auto-kill, whitelist, etc.
--- ---------------------------------------------------------------------------
+-- Improved auto-kill target feature
 local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", function(bool)
     _G.autoKillTarget = bool
     
@@ -2016,6 +1990,7 @@ local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", fu
     end
 end)
 
+-- Manual kill buttons
 killerTab:AddButton("Remove Everyone (Except Whitelist)", function()
     pcall(function()
         for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
@@ -2052,6 +2027,94 @@ killerTab:AddButton("Delete Target", function()
         end)
     end
 end)
+
+-- //  SHARED PLAYER DROPDOWN  // --------------------------------------------
+local viewKillDrop, playerMap = nil, {}
+local chosenPlayer = nil          -- currently selected Player object
+
+-- helper: build fresh player list
+local function refreshPlayerList()
+    local opts = {}
+    playerMap = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local show = (p.DisplayName ~= p.Name)
+                     and string.format("%s  (@%s)", p.DisplayName, p.Name)
+                     or  p.Name
+            table.insert(opts, show)
+            playerMap[show] = p
+        end
+    end
+    if viewKillDrop and viewKillDrop.SetValues then
+        viewKillDrop:SetValues(opts)
+    end
+end
+
+-- the dropdown
+viewKillDrop = Tabs.Killer:CreateDropdown("ViewKillDrop", {
+    Title = "Select Target",
+    Description = "Choose a player to VIEW or KILL",
+    Options = {},
+    Default = "",
+    Callback = function(displayName)
+        chosenPlayer = playerMap[displayName] or nil
+    end
+})
+
+-- VIEW / UN-VIEW buttons
+Tabs.Killer:CreateButton({
+    Title = "View Target",
+    Description = "Spectate the selected player",
+    Callback = function()
+        if chosenPlayer and chosenPlayer.Character then
+            local hum = chosenPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then workspace.CurrentCamera.CameraSubject = hum end
+        end
+    end
+})
+
+Tabs.Killer:CreateButton({
+    Title = "Un-View (Back to Self)",
+    Description = "Stop spectating and return camera to your character",
+    Callback = function()
+        if LocalPlayer.Character then
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then workspace.CurrentCamera.CameraSubject = hum end
+        end
+    end
+})
+
+-- KILL / STOP-KILL buttons
+local killLoop = false
+Tabs.Killer:CreateButton({
+    Title = "Start Killing Target",
+    Description = "Auto-kill the selected player until you stop it",
+    Callback = function()
+        if not chosenPlayer then return end
+        killLoop = true
+        task.spawn(function()
+            while killLoop and chosenPlayer and chosenPlayer.Parent do
+                if chosenPlayer.Character and chosenPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    killPlayer(chosenPlayer)   -- reuse your existing function
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+})
+
+Tabs.Killer:CreateButton({
+    Title = "Stop Killing",
+    Description = "Turn off the auto-kill loop",
+    Callback = function() killLoop = false end
+})
+
+-- keep list fresh
+refreshPlayerList()
+Players.PlayerAdded:Connect(refreshPlayerList)
+Players.PlayerRemoving:Connect(refreshPlayerList)
+task.spawn(function() while true do task.wait(2); refreshPlayerList() end end)
+-- // -------------------------------------------------------------------------
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
@@ -2223,130 +2286,81 @@ statsFolder:AddButton("Copy Statistics", function()
     setclipboard(statsText)
 end)
 
---------------------------------------------------------------------
---  PLAYER-DROPDOWN  +  VIEW / UNVIEW  +  WHITELIST-DROPDOWN
---------------------------------------------------------------------
-local killerv2Tab = window:GetTab("Killer")   -- already created earlier
-
-------  helpers  ------
-local Players   = game:GetService("Players")
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local function getPlayerList()
-    local t = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(t, string.format("%s  [@%s]", plr.DisplayName, plr.Name))
-        end
+-- Helper to get player display, fallback to Username if needed
+local function getDisplay(player)
+    if player.DisplayName ~= player.Name then
+        return ("%s (@%s)"):format(player.DisplayName, player.Name)
+    else
+        return player.Name
     end
-    return t
 end
 
-local function findPlayerFromDrop(str)
-    -- str = "Display [@Username]"
-    local user = str:match("@(%w+)")
-    return user and Players:FindFirstChild(user)
+-- Generate options for dropdown, map display to player
+local function getPlayerDropdownOptions()
+    local options, map = {}, {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local display = getDisplay(player)
+            table.insert(options, display)
+            map[display] = player
+        end
+    end
+    return options, map
 end
 
-------  TARGET DROPDOWN  ------
-local targetDrop = killerv2Tab:AddDropdown("TargetDrop", {
-    Title = "Select Target",
-    Options = getPlayerList(),
-    Callback = function(val)
-        _G.targetPlayerObj = findPlayerFromDrop(val)
-        _G.targetPlayer = val or ""
-        updateTargetPlayerLabel()
-    end
-})
+-- Initial options and mapping
+local dropdownOptions, playerMap = getPlayerDropdownOptions()
 
-------  VIEW / UNVIEW  ------
-killerv2Tab:AddButton("View Player", function()
-    if _G.targetPlayerObj and _G.targetPlayerObj.Character then
-        local hum = _G.targetPlayerObj.Character:FindFirstChildOfClass("Humanoid")
-        if hum then workspace.CurrentCamera.CameraSubject = hum end
-    end
-end)
-
-killerv2Tab:AddButton("Unview (back to self)", function()
-    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if hum then workspace.CurrentCamera.CameraSubject = hum end
-end)
-
-------  WHITELIST DROPDOWN  ------
-local whitelistDrop = killerv2Tab:AddDropdown("WhitelistDrop", {
-    Title = "Quick Whitelist",
-    Options = getPlayerList(),
-    Callback = function(val)
-        local plr = findPlayerFromDrop(val)
-        if not plr then return end
-        local entry = string.format("%s  [@%s]", plr.DisplayName, plr.Name)
-
-        -- toggle behaviour: add if not present, remove if already listed
-        local idx
-        for i, v in ipairs(_G.whitelistedPlayers) do
-            if v:find(plr.Name, 1, true) then idx = i; break end
-        end
-
-        if idx then
-            table.remove(_G.whitelistedPlayers, idx)
-        else
-            table.insert(_G.whitelistedPlayers, entry)
-        end
-        updateWhitelistedPlayersLabel()
-    end
-})
-
-------  AUTO-REFRESH DROPDOWNS WHEN PLAYERS JOIN / LEAVE  ------
-Players.PlayerAdded:Connect(function()
-    targetDrop:SetOptions(getPlayerList())
-    whitelistDrop:SetOptions(getPlayerList())
-end)
-Players.PlayerRemoving:Connect(function()
-    targetDrop:SetOptions(getPlayerList())
-    whitelistDrop:SetOptions(getPlayerList())
-end)
-
---------------------------------------------------------------------
---  KILL-AURA  WITH  RADIUS  SLIDER
---------------------------------------------------------------------
-killerv2Tab:AddSlider("AuraRadius", {
-    Title = "Kill-Aura Radius",
-    Min = 25,
-    Max = 500,
-    Default = 120,
-    Callback = function(v)
-        _G.auraRadius = v
-    end
-})
-
-killerv2Tab:AddSwitch("Kill-Aura", function(bool)
-    _G.killAura = bool
-    if bool then
-        _G.auraRadius = _G.auraRadius or 120
-        spawn(function()
-            while _G.killAura do
-                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if myRoot then
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr == LocalPlayer then continue end
-                        -- respect whitelist
-                        local skip
-                        for _, w in ipairs(_G.whitelistedPlayers) do
-                            if w:find(plr.Name, 1, true) then skip = true; break end
-                        end
-                        if skip then continue end
-
-                        local enemyRoot = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-                        if enemyRoot then
-                            local dist = (myRoot.Position - enemyRoot.Position).Magnitude
-                            if dist <= _G.auraRadius then
-                                killPlayer(plr)   -- already defined in your script
-                            end
-                        end
-                    end
-                end
-                task.wait(0.2)
+local Dropdown = Tabs.Killer:CreateDropdown("SpectatePlayer", {
+    Title = "Spectate Player",
+    Description = "Piliin ang player na panoorin",
+    Options = dropdownOptions,
+    Default = "",
+    Callback = function(Value)
+        local targetPlayer = playerMap[Value]
+        if targetPlayer and targetPlayer.Character then
+            local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                workspace.CurrentCamera.CameraSubject = humanoid
             end
-        end)
+        end
+    end
+})
+
+-- Update dropdown and map on player changes
+local function updatePlayerList()
+    local newOptions, newMap = getPlayerDropdownOptions()
+    playerMap = newMap
+    if Dropdown.SetValues then
+        Dropdown:SetValues(newOptions)
+    else
+        Dropdown.Options = newOptions
+    end
+end
+
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+
+task.spawn(function()
+    while true do
+        updatePlayerList()
+        task.wait(2)
     end
 end)
+
+-- Stop Spectating Button
+Tabs.Killer:CreateButton({
+    Title = "Stop Spying",
+    Description = "Bumalik ang camera sa iyong character",
+    Callback = function()
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                workspace.CurrentCamera.CameraSubject = humanoid
+            end
+        end
+    end
+})
