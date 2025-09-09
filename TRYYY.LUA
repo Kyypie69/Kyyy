@@ -2037,6 +2037,57 @@ end
 viewBtn   = killerTab:AddButton("View Target", spectateTarget)
 unviewBtn = killerTab:AddButton("Un-view / Stop Spectating", unspectate)
 
+local TARGET_REFRESH = 2 -- seconds
+local lastPick = ""      -- last chosen display name
+
+-- build / refresh choices
+local function refreshTargetList()
+    local choices, map = {}, {}
+    for _, p in ipairs(game.Players:GetPlayers()) do
+        if p ~= game.Players.LocalPlayer then
+            local show = (p.DisplayName ~= p.Name)
+                   and ("%s  (@%s)"):format(p.DisplayName, p.Name)
+                   or  p.Name
+            choices[show] = show
+            map[show] = p
+        end
+    end
+
+    -- create dropdown on first run
+    if not killerTab.tgtDrop then
+        killerTab.tgtDrop = killerTab:AddDropdown("TargetPlayerDrop", function(text)
+            lastPick = text
+            local plr = map[text]
+            if plr then
+                _G.targetPlayer = plr.Name .. " (" .. plr.DisplayName .. ")"
+                updateTargetPlayerLabel()
+            end
+        end)
+    end
+
+    -- update choices while preserving selection if still valid
+    killerTab.tgtDrop:Clear()
+    for _, opt in pairs(choices) do killerTab.tgtDrop:Add(opt) end
+    if choices[lastPick] then
+        killerTab.tgtDrop:Set(lastPick) -- re-select previous choice
+    else
+        lastPick = ""
+        _G.targetPlayer = ""
+        updateTargetPlayerLabel()
+    end
+end
+
+-- initial population
+refreshTargetList()
+
+-- auto-refresh loop
+task.spawn(function()
+    while true do
+        task.wait(TARGET_REFRESH)
+        refreshTargetList()
+    end
+end)
+
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
 local sessionStartStrength = 0
