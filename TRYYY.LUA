@@ -2233,10 +2233,10 @@ local function rebuildDropdown()
             optionToPlayer[opt] = p
         end
     end
-    if Killerv2Dropdown then Killerv2Dropdown:SetOptions(dropdownOptions) end
+    if killerv2Dropdown then killerv2Dropdown:SetOptions(dropdownOptions) end
 end
 
-local Dropdown = Killerv2Tab:AddDropdown("Select Target", function(opt)
+local killerDropdown = killerv2Tab:AddDropdown("Select Target", function(opt)
     targetPlayerObj = optionToPlayer[opt] or nil
 end)
 rebuildDropdown()
@@ -2244,7 +2244,7 @@ Players.PlayerAdded:Connect(rebuildDropdown)
 Players.PlayerRemoving:Connect(rebuildDropdown)
 
 -- VIEW / UN-VIEW
-Killerv2Tab:AddButton("View Target", function()
+killerv2Tab:AddButton("View Target", function()
     if targetPlayerObj and targetPlayerObj.Character then
         workspace.CurrentCamera.CameraSubject = targetPlayerObj.Character:FindFirstChildOfClass("Humanoid")
     end
@@ -2258,7 +2258,7 @@ end)
 --------------------------------------------------------------------
 -- 3.  AUTO-PUNCH (no animation)  –  spammable, no tool swing
 --------------------------------------------------------------------
-Killerv2Tab:AddSwitch("Auto Punch (no anim)", function(v)
+killerv2Tab:AddSwitch("Auto Punch (no anim)", function(v)
     _G.noAnimPunch = v
     while _G.noAnimPunch do
         pcall(function()
@@ -2272,7 +2272,7 @@ end)
 --------------------------------------------------------------------
 -- 4.  AUTO-KILL ALL  (respects whitelist + friends)
 --------------------------------------------------------------------
-Killerv2Tab:AddSwitch("Auto Kill ALL (whitelist)", function(v)
+killerv2Tab:AddSwitch("Auto Kill ALL (whitelist)", function(v)
     _G.killAll = v
     while _G.killAll do
         for _,p in ipairs(Players:GetPlayers()) do
@@ -2299,7 +2299,7 @@ end)
 --------------------------------------------------------------------
 -- 1-BUTTON  INSTANT-KILL  CURRENT  TARGET
 --------------------------------------------------------------------
-Killerv2Tab:AddButton("Kill Selected Target", function()
+killerv2Tab:AddButton("Kill Selected Target", function()
     if targetPlayerObj and targetPlayerObj.Character then
         pcall(function()
             local hrp = targetPlayerObj.Character:FindFirstChild("HumanoidRootPart")
