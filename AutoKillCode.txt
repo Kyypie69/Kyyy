@@ -32,7 +32,7 @@ setupAntiAFK()
 
 -- Create Main Window
 local window = library:AddWindow("50kg x Autokill Script", {
-    main_color = Color3.fromRGB(15, 80, 160),
+    main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(400, 382),
     can_resize = true,
 })
