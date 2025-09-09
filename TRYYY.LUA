@@ -2028,93 +2028,62 @@ killerTab:AddButton("Delete Target", function()
     end
 end)
 
--- //  SHARED PLAYER DROPDOWN  // --------------------------------------------
-local viewKillDrop, playerMap = nil, {}
-local chosenPlayer = nil          -- currently selected Player object
+-- //  KILL-TARGET DROPDOWN  // ----------------------------------------------
+local killDropdown, killMap
+local currentKillTarget = nil   -- holds the Player object (nil = no target)
 
--- helper: build fresh player list
-local function refreshPlayerList()
-    local opts = {}
-    playerMap = {}
+-- helper: refresh kill-dropdown choices
+local function refreshKillList()
+    local options, map = {}, {}
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then
             local show = (p.DisplayName ~= p.Name)
                      and string.format("%s  (@%s)", p.DisplayName, p.Name)
                      or  p.Name
-            table.insert(opts, show)
-            playerMap[show] = p
+            table.insert(options, show)
+            map[show] = p
         end
     end
-    if viewKillDrop and viewKillDrop.SetValues then
-        viewKillDrop:SetValues(opts)
+    killMap = map
+    if killDropdown and killDropdown.SetValues then
+        killDropdown:SetValues(options)
     end
 end
 
--- the dropdown
-viewKillDrop = Tabs.Killer:CreateDropdown("ViewKillDrop", {
-    Title = "Select Target",
-    Description = "Choose a player to VIEW or KILL",
-    Options = {},
+-- build the UI
+killDropdown = Tabs.Killer:CreateDropdown("KillTargetDrop", {
+    Title = "Kill Target",
+    Description = "Pick a player to auto-kill (or clear)",
+    Options = {},                       -- populated below
     Default = "",
     Callback = function(displayName)
-        chosenPlayer = playerMap[displayName] or nil
-    end
-})
+        -- untoggle previous loop
+        if currentKillTarget then _G.autoKillLoop = false end
 
--- VIEW / UN-VIEW buttons
-Tabs.Killer:CreateButton({
-    Title = "View Target",
-    Description = "Spectate the selected player",
-    Callback = function()
-        if chosenPlayer and chosenPlayer.Character then
-            local hum = chosenPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then workspace.CurrentCamera.CameraSubject = hum end
-        end
-    end
-})
-
-Tabs.Killer:CreateButton({
-    Title = "Un-View (Back to Self)",
-    Description = "Stop spectating and return camera to your character",
-    Callback = function()
-        if LocalPlayer.Character then
-            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then workspace.CurrentCamera.CameraSubject = hum end
-        end
-    end
-})
-
--- KILL / STOP-KILL buttons
-local killLoop = false
-Tabs.Killer:CreateButton({
-    Title = "Start Killing Target",
-    Description = "Auto-kill the selected player until you stop it",
-    Callback = function()
-        if not chosenPlayer then return end
-        killLoop = true
-        task.spawn(function()
-            while killLoop and chosenPlayer and chosenPlayer.Parent do
-                if chosenPlayer.Character and chosenPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    killPlayer(chosenPlayer)   -- reuse your existing function
+        currentKillTarget = killMap[displayName] or nil
+        if currentKillTarget then
+            _G.autoKillLoop = true
+            -- start killer loop
+            task.spawn(function()
+                while _G.autoKillLoop and currentKillTarget and currentKillTarget.Parent do
+                    if currentKillTarget.Character and currentKillTarget.Character:FindFirstChild("HumanoidRootPart") then
+                        -- reuse your existing killPlayer() logic
+                        killPlayer(currentKillTarget)
+                    end
+                    task.wait(0.1)
                 end
-                task.wait(0.1)
-            end
-        end)
+            end)
+        end
     end
 })
 
-Tabs.Killer:CreateButton({
-    Title = "Stop Killing",
-    Description = "Turn off the auto-kill loop",
-    Callback = function() killLoop = false end
-})
-
--- keep list fresh
-refreshPlayerList()
-Players.PlayerAdded:Connect(refreshPlayerList)
-Players.PlayerRemoving:Connect(refreshPlayerList)
-task.spawn(function() while true do task.wait(2); refreshPlayerList() end end)
--- // -------------------------------------------------------------------------
+-- initial population + keep updated
+refreshKillList()
+Players.PlayerAdded:Connect(refreshKillList)
+Players.PlayerRemoving:Connect(refreshKillList)
+task.spawn(function()
+    while true do task.wait(2); refreshKillList() end
+end)
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
