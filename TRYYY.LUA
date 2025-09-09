@@ -2028,62 +2028,41 @@ killerTab:AddButton("Delete Target", function()
     end
 end)
 
--- //  KILL-TARGET DROPDOWN  // ----------------------------------------------
-local killDropdown, killMap
-local currentKillTarget = nil   -- holds the Player object (nil = no target)
-
--- helper: refresh kill-dropdown choices
-local function refreshKillList()
-    local options, map = {}, {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            local show = (p.DisplayName ~= p.Name)
-                     and string.format("%s  (@%s)", p.DisplayName, p.Name)
-                     or  p.Name
-            table.insert(options, show)
-            map[show] = p
+-- 1. Build / refresh the player list
+local function rebuildTargetDropdown()
+    local choices = {}
+    for _, p in ipairs(game.Players:GetPlayers()) do
+        if p ~= game.Players.LocalPlayer then
+            table.insert(choices, string.format("%s  (@%s)", p.DisplayName, p.Name))
         end
     end
-    killMap = map
-    if killDropdown and killDropdown.SetValues then
-        killDropdown:SetValues(options)
-    end
+    return choices
 end
 
--- build the UI
-killDropdown = Tabs.Killer:CreateDropdown("KillTargetDrop", {
-    Title = "Kill Target",
-    Description = "Pick a player to auto-kill (or clear)",
-    Options = {},                       -- populated below
-    Default = "",
-    Callback = function(displayName)
-        -- untoggle previous loop
-        if currentKillTarget then _G.autoKillLoop = false end
-
-        currentKillTarget = killMap[displayName] or nil
-        if currentKillTarget then
-            _G.autoKillLoop = true
-            -- start killer loop
-            task.spawn(function()
-                while _G.autoKillLoop and currentKillTarget and currentKillTarget.Parent do
-                    if currentKillTarget.Character and currentKillTarget.Character:FindFirstChild("HumanoidRootPart") then
-                        -- reuse your existing killPlayer() logic
-                        killPlayer(currentKillTarget)
-                    end
-                    task.wait(0.1)
-                end
-            end)
-        end
+-- 2. Create the dropdown once
+local targetDropdown = killerTab:AddDropdown("Select Target Player", function(text)
+    -- text == "DisplayName  (@Username)"
+    local username = text:match("@(%w+)$")
+    local player = username and game.Players:FindFirstChild(username)
+    if player then
+        _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
+    else
+        _G.targetPlayer = ""
     end
-})
-
--- initial population + keep updated
-refreshKillList()
-Players.PlayerAdded:Connect(refreshKillList)
-Players.PlayerRemoving:Connect(refreshKillList)
-task.spawn(function()
-    while true do task.wait(2); refreshKillList() end
+    updateTargetPlayerLabel()
 end)
+
+-- 3. Keep it in sync
+local function refreshTargetList()
+    targetDropdown:Clear()
+    for _, opt in ipairs(rebuildTargetDropdown()) do
+        targetDropdown:Add(opt)
+    end
+end
+game.Players.PlayerAdded:Connect(refreshTargetList)
+game.Players.PlayerRemoving:Connect(refreshTargetList)
+refreshTargetList()
+
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
