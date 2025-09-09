@@ -2013,59 +2013,29 @@ local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", fu
     end
 end)
 
-local Players = game:GetService("Players")
-local LP      = Players.LocalPlayer
-local cam     = workspace.CurrentCamera
+-- ===== VIEW / UN-VIEW PLAYER =================================================
+local viewBtn, unviewBtn -- references so we can enable/disable them
 
---------------------------------------------------------------------
---  helper: build / refresh player list
---------------------------------------------------------------------
-local specDropdown, playerMap -- forward refs
-
-local function refreshPlayerList()
-    local list, map = {}, {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LP then
-            local show = (p.DisplayName ~= p.Name)
-                    and ("%s  (@%s)"):format(p.DisplayName, p.Name)
-                    or  p.Name
-            table.insert(list, show)
-            map[show] = p
-        end
-    end
-    playerMap = map
-
-    if specDropdown then          -- update existing dropdown
-        specDropdown:Clear()
-        for _, opt in ipairs(list) do specDropdown:Add(opt) end
-    else                          -- first-time creation
-        specDropdown = killerTab:AddDropdown("SpectateDrop", function(text)
-            -- nothing here – we use buttons instead
-        end)
-        for _, opt in ipairs(list) do specDropdown:Add(opt) end
+-- helper to spectate the currently-selected target
+local function spectateTarget()
+    if not _G.targetPlayer or _G.targetPlayer == "" then return end
+    local name = _G.targetPlayer:match("^([%w_]+)")          -- strip " (DisplayName)"
+    local tgt  = game.Players:FindFirstChild(name)
+    if tgt and tgt.Character and tgt.Character:FindFirstChildOfClass("Humanoid") then
+        workspace.CurrentCamera.CameraSubject = tgt.Character:FindFirstChildOfClass("Humanoid")
     end
 end
 
-killerTab:AddButton("View Player", function()
-    if not specDropdown then return end
-    local chosen = specDropdown.Value
-    local target = playerMap and playerMap[chosen]
-    if target and target.Character then
-        local hum = target.Character:FindFirstChildOfClass("Humanoid")
-        if hum then cam.CameraSubject = hum end
+-- helper to return camera to yourself
+local function unspectate()
+    local me = game.Players.LocalPlayer
+    if me.Character and me.Character:FindFirstChildOfClass("Humanoid") then
+        workspace.CurrentCamera.CameraSubject = me.Character:FindFirstChildOfClass("Humanoid")
     end
-end)
+end
 
-killerTab:AddButton("Unview / Reset Camera", function()
-    if LP.Character then
-        local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-        if hum then cam.CameraSubject = hum end
-    end
-end)
-
-Players.PlayerAdded:Connect(refreshPlayerList)
-Players.PlayerRemoving:Connect(refreshPlayerList)
-refreshPlayerList() 
+viewBtn   = killerTab:AddButton("View Target", spectateTarget)
+unviewBtn = killerTab:AddButton("Un-view / Stop Spectating", unspectate)
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
