@@ -1947,30 +1947,40 @@ local autoKillAllSwitch = killerTab:AddSwitch("Automatically Kill Everyone (Exce
     end
 end)
 
-local playersDropdown = killerTab:AddDropdown("Select Target", {}, function(selected)
-    -- selected is already the plain Name string (no DisplayName suffix)
-    _G.targetPlayer = selected
-    updateTargetPlayerLabel()
-end)
-
--- helper that rebuilds the dropdown list
-local function refreshPlayerList()
-    local list = {}
-    for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
-        if plr ~= game.Players.LocalPlayer then
-            table.insert(list, plr.Name)   -- only store Name, same as old logic
+-- ---------------------------------------------------------------------------
+-- 1.  Helper – build / refresh the drop-down choices
+-- ---------------------------------------------------------------------------
+local function buildPlayerList()
+    local choices = {}
+    for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+        if p ~= game.Players.LocalPlayer then
+            table.insert(choices, p.Name .. "  (" .. p.DisplayName .. ")")
         end
     end
-    playersDropdown:Refresh(list)
+    return choices
 end
 
--- initial fill + automatic refresh
-refreshPlayerList()
-game:GetService("Players").PlayerAdded:Connect(refreshPlayerList)
-game:GetService("Players").PlayerRemoving:Connect(refreshPlayerList)
+-- ---------------------------------------------------------------------------
+-- 2.  Replace the old TextBox with a DropDown
+-- ---------------------------------------------------------------------------
+local targetDropDown
+targetDropDown = killerTab:AddDropdown("Select Target Player", buildPlayerList(), function(option)
+    if option and option ~= "" then
+        _G.targetPlayer = option                       -- already in “Name (Display)” format
+        updateTargetPlayerLabel()
+    end
+end)
+
+-- optional: auto-refresh the list whenever someone joins/leaves
+game:GetService("Players").PlayerAdded:Connect(function()
+    targetDropDown:Refresh(buildPlayerList())
+end)
+game:GetService("Players").PlayerRemoving:Connect(function()
+    targetDropDown:Refresh(buildPlayerList())
+end)
 
 -- ---------------------------------------------------------------------------
---  REMOVE TARGET BUTTON
+-- 3.  “Remove Target” button stays exactly the same
 -- ---------------------------------------------------------------------------
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
@@ -1978,22 +1988,26 @@ killerTab:AddButton("Remove Target", function()
 end)
 
 -- ---------------------------------------------------------------------------
---  AUTO-KILL SWITCH (unchanged logic, only listens to _G.targetPlayer)
+-- 4.  Everything below this line is UNTOUCHED – auto-kill, whitelist, etc.
 -- ---------------------------------------------------------------------------
 local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", function(bool)
     _G.autoKillTarget = bool
-
+    
     if bool and _G.targetPlayer ~= "" then
         spawn(function()
             while _G.autoKillTarget and _G.targetPlayer ~= "" do
                 pcall(function()
-                    local targetPlayer = game.Players:FindFirstChild(_G.targetPlayer)
-                    if targetPlayer and targetPlayer.Character and
-                       targetPlayer.Character:FindFirstChild("HumanoidRootPart") and
-                       targetPlayer.Character:FindFirstChild("Humanoid") and
-                       targetPlayer.Character.Humanoid.Health > 0 then
-
-                        killPlayer(targetPlayer)
+                    local targetName = _G.targetPlayer:match("^([^%(]+)")
+                    if targetName then
+                        targetName = targetName:gsub("%s+$", "")
+                        local targetPlayer = game.Players:FindFirstChild(targetName)
+                        if targetPlayer and targetPlayer.Character and 
+                           targetPlayer.Character:FindFirstChild("HumanoidRootPart") and
+                           targetPlayer.Character:FindFirstChild("Humanoid") and
+                           targetPlayer.Character.Humanoid.Health > 0 then
+                            
+                            killPlayer(targetPlayer)
+                        end
                     end
                 end)
                 task.wait(0.1)
@@ -2002,9 +2016,6 @@ local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", fu
     end
 end)
 
--- ---------------------------------------------------------------------------
---  MANUAL KILL BUTTONS (unchanged)
--- ---------------------------------------------------------------------------
 killerTab:AddButton("Remove Everyone (Except Whitelist)", function()
     pcall(function()
         for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
@@ -2016,8 +2027,8 @@ killerTab:AddButton("Remove Everyone (Except Whitelist)", function()
                         break
                     end
                 end
-
-                if not isWhitelisted and player.Character and
+                
+                if not isWhitelisted and player.Character and 
                    player.Character:FindFirstChild("HumanoidRootPart") then
                     killPlayer(player)
                     task.wait(0.05)
@@ -2030,9 +2041,13 @@ end)
 killerTab:AddButton("Delete Target", function()
     if _G.targetPlayer ~= "" then
         pcall(function()
-            local targetPlayer = game.Players:FindFirstChild(_G.targetPlayer)
-            if targetPlayer then
-                killPlayer(targetPlayer)
+            local targetName = _G.targetPlayer:match("^([^%(]+)")
+            if targetName then
+                targetName = targetName:gsub("%s+$", "")
+                local targetPlayer = game.Players:FindFirstChild(targetName)
+                if targetPlayer then
+                    killPlayer(targetPlayer)
+                end
             end
         end)
     end
