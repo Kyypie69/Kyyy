@@ -1948,20 +1948,43 @@ local autoKillAllSwitch = killerTab:AddSwitch("Automatically Kill Everyone (Exce
 end)
 
 -- Target player management
-killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
-    if text and text ~= "" then
-        local player = findClosestPlayer(text)
-        if player then
-            _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
-            updateTargetPlayerLabel()
+local function rebuildTargetDropdown()
+    local choices = {}
+    local map     = {} -- displayName  -> Player instance
+
+    for _, p in ipairs(game.Players:GetPlayers()) do
+        if p ~= game.Players.LocalPlayer then
+            local show = (p.DisplayName ~= p.Name)
+                    and ("%s  (@%s)"):format(p.DisplayName, p.Name)
+                    or  p.Name
+            table.insert(choices, show)
+            map[show] = p
         end
     end
-end)
 
-killerTab:AddButton("Remove Target", function()
-    _G.targetPlayer = ""
-    updateTargetPlayerLabel()
-end)
+    -- if the dropdown already exists just update its choices
+    if killerTab.targetDropdown then
+        killerTab.targetDropdown:Clear()
+        for _, opt in ipairs(choices) do killerTab.targetDropdown:Add(opt) end
+    else
+        -- first time creation
+        killerTab.targetDropdown = killerTab:AddDropdown("TargetPlayerDrop", function(text)
+            local plr = map[text]
+            if plr then
+                _G.targetPlayer = plr.Name .. " (" .. plr.DisplayName .. ")"
+                updateTargetPlayerLabel()
+            end
+        end)
+        for _, opt in ipairs(choices) do killerTab.targetDropdown:Add(opt) end
+    end
+end
+
+-- initial population
+rebuildTargetDropdown()
+
+-- keep it in sync
+game.Players.PlayerAdded:Connect(rebuildTargetDropdown)
+game.Players.PlayerRemoving:Connect(rebuildTargetDropdown)
 
 -- Improved auto-kill target feature
 local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", function(bool)
@@ -2027,42 +2050,6 @@ killerTab:AddButton("Delete Target", function()
         end)
     end
 end)
-
--- 1. Build / refresh the player list
-local function rebuildTargetDropdown()
-    local choices = {}
-    for _, p in ipairs(game.Players:GetPlayers()) do
-        if p ~= game.Players.LocalPlayer then
-            table.insert(choices, string.format("%s  (@%s)", p.DisplayName, p.Name))
-        end
-    end
-    return choices
-end
-
--- 2. Create the dropdown once
-local targetDropdown = killerTab:AddDropdown("Select Target Player", function(text)
-    -- text == "DisplayName  (@Username)"
-    local username = text:match("@(%w+)$")
-    local player = username and game.Players:FindFirstChild(username)
-    if player then
-        _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
-    else
-        _G.targetPlayer = ""
-    end
-    updateTargetPlayerLabel()
-end)
-
--- 3. Keep it in sync
-local function refreshTargetList()
-    targetDropdown:Clear()
-    for _, opt in ipairs(rebuildTargetDropdown()) do
-        targetDropdown:Add(opt)
-    end
-end
-game.Players.PlayerAdded:Connect(refreshTargetList)
-game.Players.PlayerRemoving:Connect(refreshTargetList)
-refreshTargetList()
-
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
