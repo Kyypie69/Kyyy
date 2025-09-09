@@ -1986,31 +1986,13 @@ rebuildTargetDropdown()
 game.Players.PlayerAdded:Connect(rebuildTargetDropdown)
 game.Players.PlayerRemoving:Connect(rebuildTargetDropdown)
 
-local TARGET_REFRESH = 2 -- seconds
-local lastPick = ""      -- last chosen display name
-
--- build / refresh choices
-local function refreshTargetList()
-    local choices, map = {}, {}
-    for _, p in ipairs(game.Players:GetPlayers()) do
-        if p ~= game.Players.LocalPlayer then
-            local show = (p.DisplayName ~= p.Name)
-                   and ("%s  (@%s)"):format(p.DisplayName, p.Name)
-                   or  p.Name
-            choices[show] = show
-            map[show] = p
-        end
-    end
-
--- initial population
-refreshTargetList()
-
--- auto-refresh loop
-task.spawn(function()
-    while true do
-        task.wait(TARGET_REFRESH)
-        refreshTargetList()
-    end
+killerTab:AddButton("🔄 Refresh List", function()
+    rebuildTargetDropdown()          -- re-scan every player
+    game:GetService("StarterGui"):SetCore("SendNotification",{
+        Title = "Player list refreshed",
+        Text  = "Dropdown updated with current server players.",
+        Duration = 2
+    })
 end)
 
 -- Improved auto-kill target feature
