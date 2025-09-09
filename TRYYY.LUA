@@ -1947,41 +1947,53 @@ local autoKillAllSwitch = killerTab:AddSwitch("Automatically Kill Everyone (Exce
     end
 end)
 
--- Target player management
-killerTab:AddTextBox("Select Target Player (Name/Nickname)", function(text)
-    if text and text ~= "" then
-        local player = findClosestPlayer(text)
-        if player then
-            _G.targetPlayer = player.Name .. " (" .. player.DisplayName .. ")"
-            updateTargetPlayerLabel()
-        end
-    end
+local playersDropdown = killerTab:AddDropdown("Select Target", {}, function(selected)
+    -- selected is already the plain Name string (no DisplayName suffix)
+    _G.targetPlayer = selected
+    updateTargetPlayerLabel()
 end)
 
+-- helper that rebuilds the dropdown list
+local function refreshPlayerList()
+    local list = {}
+    for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+        if plr ~= game.Players.LocalPlayer then
+            table.insert(list, plr.Name)   -- only store Name, same as old logic
+        end
+    end
+    playersDropdown:Refresh(list)
+end
+
+-- initial fill + automatic refresh
+refreshPlayerList()
+game:GetService("Players").PlayerAdded:Connect(refreshPlayerList)
+game:GetService("Players").PlayerRemoving:Connect(refreshPlayerList)
+
+-- ---------------------------------------------------------------------------
+--  REMOVE TARGET BUTTON
+-- ---------------------------------------------------------------------------
 killerTab:AddButton("Remove Target", function()
     _G.targetPlayer = ""
     updateTargetPlayerLabel()
 end)
 
--- Improved auto-kill target feature
+-- ---------------------------------------------------------------------------
+--  AUTO-KILL SWITCH (unchanged logic, only listens to _G.targetPlayer)
+-- ---------------------------------------------------------------------------
 local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", function(bool)
     _G.autoKillTarget = bool
-    
+
     if bool and _G.targetPlayer ~= "" then
         spawn(function()
             while _G.autoKillTarget and _G.targetPlayer ~= "" do
                 pcall(function()
-                    local targetName = _G.targetPlayer:match("^([^%(]+)")
-                    if targetName then
-                        targetName = targetName:gsub("%s+$", "")
-                        local targetPlayer = game.Players:FindFirstChild(targetName)
-                        if targetPlayer and targetPlayer.Character and 
-                           targetPlayer.Character:FindFirstChild("HumanoidRootPart") and
-                           targetPlayer.Character:FindFirstChild("Humanoid") and
-                           targetPlayer.Character.Humanoid.Health > 0 then
-                            
-                            killPlayer(targetPlayer)
-                        end
+                    local targetPlayer = game.Players:FindFirstChild(_G.targetPlayer)
+                    if targetPlayer and targetPlayer.Character and
+                       targetPlayer.Character:FindFirstChild("HumanoidRootPart") and
+                       targetPlayer.Character:FindFirstChild("Humanoid") and
+                       targetPlayer.Character.Humanoid.Health > 0 then
+
+                        killPlayer(targetPlayer)
                     end
                 end)
                 task.wait(0.1)
@@ -1990,7 +2002,9 @@ local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", fu
     end
 end)
 
--- Manual kill buttons
+-- ---------------------------------------------------------------------------
+--  MANUAL KILL BUTTONS (unchanged)
+-- ---------------------------------------------------------------------------
 killerTab:AddButton("Remove Everyone (Except Whitelist)", function()
     pcall(function()
         for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
@@ -2002,8 +2016,8 @@ killerTab:AddButton("Remove Everyone (Except Whitelist)", function()
                         break
                     end
                 end
-                
-                if not isWhitelisted and player.Character and 
+
+                if not isWhitelisted and player.Character and
                    player.Character:FindFirstChild("HumanoidRootPart") then
                     killPlayer(player)
                     task.wait(0.05)
@@ -2016,13 +2030,9 @@ end)
 killerTab:AddButton("Delete Target", function()
     if _G.targetPlayer ~= "" then
         pcall(function()
-            local targetName = _G.targetPlayer:match("^([^%(]+)")
-            if targetName then
-                targetName = targetName:gsub("%s+$", "")
-                local targetPlayer = game.Players:FindFirstChild(targetName)
-                if targetPlayer then
-                    killPlayer(targetPlayer)
-                end
+            local targetPlayer = game.Players:FindFirstChild(_G.targetPlayer)
+            if targetPlayer then
+                killPlayer(targetPlayer)
             end
         end)
     end
