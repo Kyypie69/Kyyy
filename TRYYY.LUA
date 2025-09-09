@@ -2280,7 +2280,7 @@ Tabs.Killer:CreateButton({
 --------------------------------------------------------------------
 --  NEW: KILLER TAB ENHANCEMENTS
 --------------------------------------------------------------------
-local KillTab = window:AddTab("🔪 Killer+")          -- fresh tab
+local killTab = window:AddTab("v2 Killer")
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
