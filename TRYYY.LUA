@@ -1663,153 +1663,133 @@ end)
    
 
 
---[[==========  KILLER TAB  –  NEW VERSION  ==========]]
-local killerTab   = window:AddTab("KILLER")
-local Players     = game:GetService("Players")
+--------------------------------------------------------------------
+--  PLAYER-DROPDOWN  +  VIEW / UNVIEW  +  WHITELIST-DROPDOWN
+--------------------------------------------------------------------
+local killerTab = window:GetTab("Killer")   -- already created earlier
+
+------  helpers  ------
+local Players   = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
---[[----------  UTILS  ----------]]
-local function getChar(p) return p.Character end
-local function isAlive(p)
-    local c = getChar(p)
-    return c and c:FindFirstChildOfClass("Humanoid")
-           and c.Humanoid.Health > 0
-end
-
-local function equipPunch()
-    local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
-    local c  = getChar(LocalPlayer)
-    if not (bp and c) then return end
-    local punch = bp:FindFirstChild("Punch") or c:FindFirstChild("Punch")
-    if punch and punch.Parent == bp then
-        c:FindFirstChildOfClass("Humanoid"):EquipTool(punch)
+local function getPlayerList()
+    local t = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            table.insert(t, string.format("%s  [@%s]", plr.DisplayName, plr.Name))
+        end
     end
-    return c:FindFirstChild("Punch")
+    return t
 end
 
-local function killPlayer(p)
-    if not isAlive(p) then return end
-    local myC = getChar(LocalPlayer)
-    local tC  = getChar(p)
-    if not (myC and tC) then return end
-    local hand = myC:FindFirstChild("LeftHand") or myC:FindFirstChild("RightHand")
-    local root = tC:FindFirstChild("HumanoidRootPart")
-    if hand and root then
-        -- safe firetouch
-        pcall(function()
-            firetouchinterest(root, hand, 0) task.wait()
-            firetouchinterest(root, hand, 1)
+local function findPlayerFromDrop(str)
+    -- str = "Display [@Username]"
+    local user = str:match("@(%w+)")
+    return user and Players:FindFirstChild(user)
+end
+
+------  TARGET DROPDOWN  ------
+local targetDrop = killerTab:AddDropdown("TargetDrop", {
+    Title = "Select Target",
+    Options = getPlayerList(),
+    Callback = function(val)
+        _G.targetPlayerObj = findPlayerFromDrop(val)
+        _G.targetPlayer = val or ""
+        updateTargetPlayerLabel()
+    end
+})
+
+------  VIEW / UNVIEW  ------
+killerTab:AddButton("View Player", function()
+    if _G.targetPlayerObj and _G.targetPlayerObj.Character then
+        local hum = _G.targetPlayerObj.Character:FindFirstChildOfClass("Humanoid")
+        if hum then workspace.CurrentCamera.CameraSubject = hum end
+    end
+end)
+
+killerTab:AddButton("Unview (back to self)", function()
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum then workspace.CurrentCamera.CameraSubject = hum end
+end)
+
+------  WHITELIST DROPDOWN  ------
+local whitelistDrop = killerTab:AddDropdown("WhitelistDrop", {
+    Title = "Quick Whitelist",
+    Options = getPlayerList(),
+    Callback = function(val)
+        local plr = findPlayerFromDrop(val)
+        if not plr then return end
+        local entry = string.format("%s  [@%s]", plr.DisplayName, plr.Name)
+
+        -- toggle behaviour: add if not present, remove if already listed
+        local idx
+        for i, v in ipairs(_G.whitelistedPlayers) do
+            if v:find(plr.Name, 1, true) then idx = i; break end
+        end
+
+        if idx then
+            table.remove(_G.whitelistedPlayers, idx)
+        else
+            table.insert(_G.whitelistedPlayers, entry)
+        end
+        updateWhitelistedPlayersLabel()
+    end
+})
+
+------  AUTO-REFRESH DROPDOWNS WHEN PLAYERS JOIN / LEAVE  ------
+Players.PlayerAdded:Connect(function()
+    targetDrop:SetOptions(getPlayerList())
+    whitelistDrop:SetOptions(getPlayerList())
+end)
+Players.PlayerRemoving:Connect(function()
+    targetDrop:SetOptions(getPlayerList())
+    whitelistDrop:SetOptions(getPlayerList())
+end)
+
+--------------------------------------------------------------------
+--  KILL-AURA  WITH  RADIUS  SLIDER
+--------------------------------------------------------------------
+killerTab:AddSlider("AuraRadius", {
+    Title = "Kill-Aura Radius",
+    Min = 25,
+    Max = 500,
+    Default = 120,
+    Callback = function(v)
+        _G.auraRadius = v
+    end
+})
+
+killerTab:AddSwitch("Kill-Aura", function(bool)
+    _G.killAura = bool
+    if bool then
+        _G.auraRadius = _G.auraRadius or 120
+        spawn(function()
+            while _G.killAura do
+                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if myRoot then
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr == LocalPlayer then continue end
+                        -- respect whitelist
+                        local skip
+                        for _, w in ipairs(_G.whitelistedPlayers) do
+                            if w:find(plr.Name, 1, true) then skip = true; break end
+                        end
+                        if skip then continue end
+
+                        local enemyRoot = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                        if enemyRoot then
+                            local dist = (myRoot.Position - enemyRoot.Position).Magnitude
+                            if dist <= _G.auraRadius then
+                                killPlayer(plr)   -- already defined in your script
+                            end
+                        end
+                    end
+                end
+                task.wait(0.2)
+            end
         end)
     end
-end
-
---[[----------  WHITELIST  ----------]]
-_G.KWhitelist = _G.KWhitelist or {}
-local function inWhitelist(name)
-    for _,v in pairs(_G.KWhitelist) do
-        if string.find(string.lower(v), string.lower(name), 1, true) then return true end
-    end
-    return false
-end
-
---[[----------  PLAYER DROPDOWN  ----------]]
-local dropdownOptions, playerMap do
-    local function build()
-        local t, m = {}, {}
-        for _,plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                local show = ("%s (@%s)"):format(plr.DisplayName, plr.Name)
-                table.insert(t, show)
-                m[show] = plr
-            end
-        end
-        return t, m
-    end
-    dropdownOptions, playerMap = build()
-    Players.PlayerAdded:Connect(function() dropdownOptions, playerMap = build() end)
-    Players.PlayerRemoving:Connect(function() dropdownOptions, playerMap = build() end)
-end
-
-killerTab:AddDropdown("TargetDrop", function(opt)
-    _G.KTarget = playerMap[opt]
-end):Add(unpack(dropdownOptions))
-
---[[----------  KILL AURA  ----------]]
-_G.KAura = false
-task.spawn(function()
-    while true do
-        if _G.KAura then
-            equipPunch()
-            for _,plr in ipairs(Players:GetPlayers()) do
-                if plr ~= LocalPlayer and not inWhitelist(plr.Name) and isAlive(plr) then
-                    killPlayer(plr)
-                end
-            end
-        end
-        task.wait(0.25)
-    end
-end
-)
-killerTab:AddSwitch("Kill Aura (loop)", function(s) _G.KAura = s end)
-
---[[----------  AUTO-KILL EVEN WHEN DEAD  ----------]]
-_G.KWhileDead = false
-LocalPlayer.CharacterAdded:Connect(function()
-    if _G.KWhileDead then
-        repeat task.wait() until isAlive(LocalPlayer)
-        equipPunch()
-    end
 end)
-
-killerTab:AddSwitch("Auto-Kill while dead (respawn)", function(s)
-    _G.KWhileDead = s
-    if s then equipPunch() end
-end)
-
---[[----------  SPECTATE  ----------]]
-killerTab:AddSwitch("Spectate selected", function(s)
-    if s and _G.KTarget and isAlive(_G.KTarget) then
-        workspace.CurrentCamera.CameraSubject = _G.KTarget.Character.Humanoid
-    else
-        local me = getChar(LocalPlayer)
-        if me then workspace.CurrentCamera.CameraSubject = me:FindFirstChildOfClass("Humanoid") end
-    end
-end)
-
---[[----------  MANUAL BUTTONS  ----------]]
-killerTab:AddButton("Kill selected", function()
-    if _G.KTarget then killPlayer(_G.KTarget) end
-end)
-
-killerTab:AddButton("Kill all (no whitelist)", function()
-    for _,plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and not inWhitelist(plr.Name) then killPlayer(plr) end
-    end
-end)
-
-killerTab:AddButton("Stop spectating", function()
-    local me = getChar(LocalPlayer)
-    if me then workspace.CurrentCamera.CameraSubject = me:FindFirstChildOfClass("Humanoid") end
-end)
-
---[[----------  WHITELIST UI  ----------]]
-killerTab:AddTextBox("Whitelist add", function(t)
-    if t ~= "" and not inWhitelist(t) then
-        table.insert(_G.KWhitelist, t)
-    end
-end)
-
-killerTab:AddTextBox("Whitelist remove", function(t)
-    for i,v in ipairs(_G.KWhitelist) do
-        if string.find(string.lower(v), string.lower(t), 1, true) then
-            table.remove(_G.KWhitelist, i)
-            break
-        end
-    end
-end)
-
-killerTab:AddButton("Clear whitelist", function() _G.KWhitelist = {} end)
---[[==========  END KILLER TAB  ==========]]
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
@@ -1983,131 +1963,3 @@ end)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-
---------------------------------------------------------------------
---  PLAYER-DROPDOWN  +  VIEW / UNVIEW  +  WHITELIST-DROPDOWN
---------------------------------------------------------------------
-local killerTab = window:GetTab("Killer")   -- already created earlier
-
-------  helpers  ------
-local Players   = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-local function getPlayerList()
-    local t = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(t, string.format("%s  [@%s]", plr.DisplayName, plr.Name))
-        end
-    end
-    return t
-end
-
-local function findPlayerFromDrop(str)
-    -- str = "Display [@Username]"
-    local user = str:match("@(%w+)")
-    return user and Players:FindFirstChild(user)
-end
-
-------  TARGET DROPDOWN  ------
-local targetDrop = killerTab:AddDropdown("TargetDrop", {
-    Title = "Select Target",
-    Options = getPlayerList(),
-    Callback = function(val)
-        _G.targetPlayerObj = findPlayerFromDrop(val)
-        _G.targetPlayer = val or ""
-        updateTargetPlayerLabel()
-    end
-})
-
-------  VIEW / UNVIEW  ------
-killerTab:AddButton("View Player", function()
-    if _G.targetPlayerObj and _G.targetPlayerObj.Character then
-        local hum = _G.targetPlayerObj.Character:FindFirstChildOfClass("Humanoid")
-        if hum then workspace.CurrentCamera.CameraSubject = hum end
-    end
-end)
-
-killerTab:AddButton("Unview (back to self)", function()
-    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if hum then workspace.CurrentCamera.CameraSubject = hum end
-end)
-
-------  WHITELIST DROPDOWN  ------
-local whitelistDrop = killerTab:AddDropdown("WhitelistDrop", {
-    Title = "Quick Whitelist",
-    Options = getPlayerList(),
-    Callback = function(val)
-        local plr = findPlayerFromDrop(val)
-        if not plr then return end
-        local entry = string.format("%s  [@%s]", plr.DisplayName, plr.Name)
-
-        -- toggle behaviour: add if not present, remove if already listed
-        local idx
-        for i, v in ipairs(_G.whitelistedPlayers) do
-            if v:find(plr.Name, 1, true) then idx = i; break end
-        end
-
-        if idx then
-            table.remove(_G.whitelistedPlayers, idx)
-        else
-            table.insert(_G.whitelistedPlayers, entry)
-        end
-        updateWhitelistedPlayersLabel()
-    end
-})
-
-------  AUTO-REFRESH DROPDOWNS WHEN PLAYERS JOIN / LEAVE  ------
-Players.PlayerAdded:Connect(function()
-    targetDrop:SetOptions(getPlayerList())
-    whitelistDrop:SetOptions(getPlayerList())
-end)
-Players.PlayerRemoving:Connect(function()
-    targetDrop:SetOptions(getPlayerList())
-    whitelistDrop:SetOptions(getPlayerList())
-end)
-
---------------------------------------------------------------------
---  KILL-AURA  WITH  RADIUS  SLIDER
---------------------------------------------------------------------
-killerTab:AddSlider("AuraRadius", {
-    Title = "Kill-Aura Radius",
-    Min = 25,
-    Max = 500,
-    Default = 120,
-    Callback = function(v)
-        _G.auraRadius = v
-    end
-})
-
-killerTab:AddSwitch("Kill-Aura", function(bool)
-    _G.killAura = bool
-    if bool then
-        _G.auraRadius = _G.auraRadius or 120
-        spawn(function()
-            while _G.killAura do
-                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if myRoot then
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr == LocalPlayer then continue end
-                        -- respect whitelist
-                        local skip
-                        for _, w in ipairs(_G.whitelistedPlayers) do
-                            if w:find(plr.Name, 1, true) then skip = true; break end
-                        end
-                        if skip then continue end
-
-                        local enemyRoot = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-                        if enemyRoot then
-                            local dist = (myRoot.Position - enemyRoot.Position).Magnitude
-                            if dist <= _G.auraRadius then
-                                killPlayer(plr)   -- already defined in your script
-                            end
-                        end
-                    end
-                end
-                task.wait(0.2)
-            end
-        end)
-    end
-end)
