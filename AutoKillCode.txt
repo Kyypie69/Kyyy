@@ -1986,6 +1986,15 @@ rebuildTargetDropdown()
 game.Players.PlayerAdded:Connect(rebuildTargetDropdown)
 game.Players.PlayerRemoving:Connect(rebuildTargetDropdown)
 
+killerTab:AddButton("🔄 Refresh List", function()
+    rebuildTargetDropdown()          -- re-scan every player
+    game:GetService("StarterGui"):SetCore("SendNotification",{
+        Title = "Player list refreshed",
+        Text  = "Dropdown updated with current server players.",
+        Duration = 2
+    })
+end)
+
 -- Improved auto-kill target feature
 local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", function(bool)
     _G.autoKillTarget = bool
