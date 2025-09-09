@@ -425,6 +425,100 @@ local targetInput = Tabs.Rebirth:CreateInput("TargetRebirth", {
 	end
 })
 
+--[[━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    AUTO-KILL MODULE  –  dropdown target + kill-all
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━]]--
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-------------------------------------------
+-- state
+-------------------------------------------
+local chosenPlayer = nil          -- dropdown selection
+local killAllEnabled = false
+local autoKillCon = nil           -- single-target loop
+local killAllCon  = nil           -- kill-all loop
+
+-------------------------------------------
+-- helpers
+-------------------------------------------
+local function kill(plr)
+    if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+        LP.muscleEvent:FireServer("kill", plr.Character.Humanoid)
+        plr.Character.Humanoid.Health = 0
+    end
+end
+
+local function refreshDropdown()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LP then table.insert(list, p.Name) end
+    end
+    return list
+end
+
+-------------------------------------------
+-- GUI  (Misc tab)
+-------------------------------------------
+local Misc = Tabs.Misc
+
+-- dropdown to pick victim
+local TargetDropdown = Misc:CreateDropdown("KillTargetDrop", {
+    Title = "Select Target",
+    Description = "Pick player to auto-kill",
+    Values = refreshDropdown(),
+    Multi = false,
+    Default = nil,
+    Callback = function(selection)
+        chosenPlayer = selection and Players:FindFirstChild(selection) or nil
+    end
+})
+
+-- auto-kill chosen toggle
+Misc:CreateToggle("AutoKillChosen", {
+    Title = "Auto Kill Target",
+    Default = false,
+    Callback = function(v)
+        if v then
+            autoKillCon = RunService.Heartbeat:Connect(function()
+                if chosenPlayer and chosenPlayer.Character then
+                    kill(chosenPlayer)
+                end
+            end)
+        else
+            if autoKillCon then autoKillCon:Disconnect(); autoKillCon = nil end
+        end
+    end
+})
+
+-- kill-all toggle
+Misc:CreateToggle("AutoKillAll", {
+    Title = "Auto Kill All",
+    Default = false,
+    Callback = function(v)
+        killAllEnabled = v
+        if v then
+            killAllCon = RunService.Heartbeat:Connect(function()
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LP then kill(p) end
+                end
+            end)
+        else
+            if killAllCon then killAllCon:Disconnect(); killAllCon = nil end
+        end
+    end
+})
+
+-- refresh dropdown when players join/leave
+Players.PlayerAdded:Connect(function()
+    TargetDropdown:SetValues(refreshDropdown())
+end)
+Players.PlayerRemoving:Connect(function()
+    TargetDropdown:SetValues(refreshDropdown())
+end)
+
 local Toggle = Tabs.Misc:AddToggle("AutoWheel", {
 	Title = "Auto Spin Wheel",
 	Default = false,
