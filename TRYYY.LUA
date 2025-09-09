@@ -2236,7 +2236,7 @@ local function rebuildDropdown()
     if Killerv2Dropdown then Killerv2Dropdown:SetOptions(dropdownOptions) end
 end
 
-local Killerv2Dropdown = Killerv2Tab:AddDropdown("Select Target", function(opt)
+local Dropdown = Killerv2Tab:AddDropdown("Select Target", function(opt)
     targetPlayerObj = optionToPlayer[opt] or nil
 end)
 rebuildDropdown()
