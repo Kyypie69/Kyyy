@@ -1,229 +1,215 @@
--- Main script, Rayfield UI, feature loops, and modular glue
+-- 50kg Muscle Legends | Fluent GUI Loader + PACK MODE
+-- loadstring(game:HttpGet("https://pastebin.com/raw/YOUR_PASTEBIN_HERE"))()
 
--- REQUIRE MODULES
-local PlayerUtils = loadstring(readfile("PlayerUtils.lua"))()
-local WhitelistManager = loadstring(readfile("WhitelistManager.lua"))()
-local ESPManager = loadstring(readfile("ESPManager.lua"))()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/download/v1.0.0/Fluent.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
--- LOAD RAYFIELD (make sure Rayfield is in your workspace or loadstring it here)
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
+local Window = Fluent:CreateWindow({
+    Title = "50kg Muscle Legends | Fluent PACK MODE",
+    SubTitle = "Fast Rebirth & Grinding for Pack Users",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(600, 500),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
 
--- SERVICES
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+    Farm = Window:AddTab({ Title = "Farm", Icon = "hammer" }),
+    Pets = Window:AddTab({ Title = "Pets", Icon = "paw" }),
+    Packs = Window:AddTab({ Title = "Packs", Icon = "cube" }),
+    Killer = Window:AddTab({ Title = "Kill Aura", Icon = "sword" }),
+    Teleports = Window:AddTab({ Title = "Teleports", Icon = "map" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "settings" }),
+    Stats = Window:AddTab({ Title = "Stats", Icon = "chart" }),
+    ESP = Window:AddTab({ Title = "ESP", Icon = "eye" })
+}
+
+-- Services
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
 
--- STATE
-local autoKill, targetMode, autoFarm, godmodeEnabled, antiAfkEnabled = false, false, false, false, false
-local targetPlayer = nil
-
--- Functions
-local function KillPlayer(player)
-    local myChar = LocalPlayer.Character
-    if not myChar then return end
-    local myHand = myChar:FindFirstChild("LeftHand") or myChar:FindFirstChild("RightHand")
-    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and myHand then
-        firetouchinterest(player.Character.HumanoidRootPart, myHand, 0)
-        firetouchinterest(player.Character.HumanoidRootPart, myHand, 1)
-    end
+-- Utility
+local function Notify(Title, Text)
+    Fluent:Notify({ Title = Title, Content = Text, Duration = 3 })
 end
 
--- UI Construction
-local Window = Rayfield:CreateWindow({
-    Name = "Advanced Kill GUI (Rayfield Edition)",
-    LoadingTitle = "Initializing...",
-    LoadingSubtitle = "by Kyypie69",
-})
-
--- Player List Helper
-local function GetPlayerOptions()
-    local opts = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            table.insert(opts, p.Name .. " (" .. p.DisplayName .. ")")
-        end
-    end
-    return opts
-end
-
--- Tabs
-local CombatTab = Window:CreateTab("Combat", 4483345998)
-local UtilityTab = Window:CreateTab("Utility", 4483345998)
-local WhitelistTab = Window:CreateTab("Whitelist", 4483345998)
-local ESPTab = Window:CreateTab("ESP", 4483345998)
-
--- Combat Features
-CombatTab:CreateToggle({
-    Name = "Auto Kill (Except Whitelisted)",
-    CurrentValue = false,
-    Callback = function(Value)
-        autoKill = Value
-    end
-})
-
-CombatTab:CreateToggle({
-    Name = "Target Kill Mode",
-    CurrentValue = false,
-    Callback = function(Value)
-        targetMode = Value
-    end
-})
-
-CombatTab:CreateDropdown({
-    Name = "Target Player",
-    Options = GetPlayerOptions(),
-    CurrentOption = nil,
-    Callback = function(Option)
-        targetPlayer = PlayerUtils.GetPlayerByNameOrDisplay(Option:match("^(.-) %("))
-        ESPManager:Refresh(WhitelistManager, targetPlayer)
-    end
-})
-
--- Utility Features
-UtilityTab:CreateToggle({
-    Name = "Auto Farm",
-    CurrentValue = false,
-    Callback = function(Value)
-        autoFarm = Value
-    end
-})
-
-UtilityTab:CreateToggle({
-    Name = "Godmode",
-    CurrentValue = false,
-    Callback = function(Value)
-        godmodeEnabled = Value
-    end
-})
-
-UtilityTab:CreateToggle({
-    Name = "Anti-AFK",
-    CurrentValue = false,
-    Callback = function(Value)
-        antiAfkEnabled = Value
-        if Value then
-            LocalPlayer.Idled:Connect(function()
-                game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-                wait(0.5)
-                game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-            end)
-        end
-    end
-})
-
--- ESP Features
-ESPTab:CreateToggle({
-    Name = "Enable ESP",
-    CurrentValue = false,
-    Callback = function(Value)
-        ESPManager.Enabled = Value
-        ESPManager:Refresh(WhitelistManager, targetPlayer)
-    end
-})
-
-Players.PlayerAdded:Connect(function()
-    ESPManager:Refresh(WhitelistManager, targetPlayer)
-end)
-Players.PlayerRemoving:Connect(function()
-    ESPManager:Refresh(WhitelistManager, targetPlayer)
+-- Anti-AFK
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- Whitelist UI
-WhitelistTab:CreateInput({
-    Name = "Add Player by Name",
-    PlaceholderText = "Username or DisplayName",
-    RemoveTextAfterFocusLost = true,
-    Callback = function(Value)
-        local p = PlayerUtils.GetPlayerByNameOrDisplay(Value)
-        if p then
-            WhitelistManager:Add(p.Name)
-            ESPManager:Refresh(WhitelistManager, targetPlayer)
-            Rayfield:Notify({Title="Whitelist", Content="Added "..p.Name.." to whitelist"})
-        else
-            Rayfield:Notify({Title="Whitelist", Content="Player not found"})
-        end
-    end
-})
+-- PACK PETS
+local packPets = {"Swift Samurai", "Tribal Overlord", "Mighty Monster", "Wild Wizard"}
 
-WhitelistTab:CreateDropdown({
-    Name = "Remove Player from Whitelist",
-    Options = WhitelistManager:List(),
-    CurrentOption = nil,
-    Callback = function(Name)
-        WhitelistManager:Remove(Name)
-        ESPManager:Refresh(WhitelistManager, targetPlayer)
-        Rayfield:Notify({Title="Whitelist", Content="Removed "..Name.." from whitelist"})
-    end
-})
+local function EquipPackPet()
+    local petsFolder = player:FindFirstChild("petsFolder")
+    if not petsFolder then return end
 
-WhitelistTab:CreateButton({
-    Name = "Clear All Whitelisted",
-    Callback = function()
-        WhitelistManager:Clear()
-        ESPManager:Refresh(WhitelistManager, targetPlayer)
-        Rayfield:Notify({Title="Whitelist", Content="Whitelist cleared"})
-    end
-})
-
-WhitelistTab:CreateParagraph({Title="Current Whitelist", Content=function()
-    local list = WhitelistManager:List()
-    return #list > 0 and table.concat(list, "\n") or "None"
-end})
-
--- Combat/Utility Loops
-task.spawn(function()
-    while true do
-        -- Kill Aura
-        if autoKill then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and not WhitelistManager:IsWhitelisted(player) then
-                    if player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                        KillPlayer(player)
+    for _, petName in ipairs(packPets) do
+        for _, folder in ipairs(petsFolder:GetChildren()) do
+            if folder:IsA("Folder") then
+                for _, pet in ipairs(folder:GetChildren()) do
+                    if pet.Name == petName then
+                        ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+                        task.wait(0.1)
+                        ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                        Notify("Pack Pet Equipped", petName)
+                        return true
                     end
                 end
             end
-        elseif targetMode and targetPlayer then
-            if targetPlayer ~= LocalPlayer and not WhitelistManager:IsWhitelisted(targetPlayer) then
-                if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health > 0 then
-                    KillPlayer(targetPlayer)
+        end
+    end
+    return false
+end
+
+-- TABS.PACKS
+Tabs.Packs:AddToggle("FastRebirthPack", {
+    Title = "Fast Rebirth (Pack Mode)",
+    Default = false,
+    Callback = function(Value)
+        getgenv().fastRebirthPack = Value
+        while getgenv().fastRebirthPack do
+            if not EquipPackPet() then
+                Notify("Pack Mode", "No pack pets found. Stopping.")
+                getgenv().fastRebirthPack = false
+                break
+            end
+
+            local rebirthCost = 10000 + (5000 * player.leaderstats.Rebirths.Value)
+            if player.ultimatesFolder:FindFirstChild("Golden Rebirth") then
+                local golden = player.ultimatesFolder["Golden Rebirth"].Value
+                rebirthCost = math.floor(rebirthCost * (1 - (golden * 0.1)))
+            end
+
+            while player.leaderstats.Strength.Value < rebirthCost and getgenv().fastRebirthPack do
+                for i = 1, 10 do
+                    player.muscleEvent:FireServer("rep")
                 end
+                task.wait()
+            end
+
+            local oldRebirths = player.leaderstats.Rebirths.Value
+            repeat
+                ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                task.wait(0.1)
+            until player.leaderstats.Rebirths.Value > oldRebirths
+
+            task.wait(0.5)
+        end
+    end
+})
+
+Tabs.Packs:AddToggle("FastGrindPack", {
+    Title = "Fast Grinding (Pack Mode)",
+    Default = false,
+    Callback = function(Value)
+        getgenv().fastGrindPack = Value
+        if Value then
+            if not EquipPackPet() then
+                Notify("Pack Mode", "No pack pets found.")
+                getgenv().fastGrindPack = false
+                return
+            end
+
+            for i = 1, 14 do
+                task.spawn(function()
+                    while getgenv().fastGrindPack do
+                        player.muscleEvent:FireServer("rep")
+                        task.wait()
+                    end
+                end)
             end
         end
-        wait(0.15)
     end
-end)
+})
 
-task.spawn(function()
-    while true do
-        -- Auto Farm loop
-        if autoFarm then
-            for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-                if tool:IsA("Tool") then
-                    LocalPlayer.Character.Humanoid:EquipTool(tool)
-                    wait(0.1)
-                    pcall(function() tool:Activate() end)
+Tabs.Packs:AddButton({
+    Title = "Equip Best Pack Pet",
+    Callback = EquipPackPet
+})
+
+-- ESP (same as before)
+local espEnabled = false
+local espCache = {}
+
+local function CreateESP(target)
+    if espCache[target] then return end
+    local bill = Instance.new("BillboardGui")
+    bill.Name = "ESP"
+    bill.Size = UDim2.new(0, 200, 0, 50)
+    bill.StudsOffset = Vector3.new(0, 3, 0)
+    bill.Adornee = target.Character:WaitForChild("Head")
+    bill.Parent = target.Character
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = string.format("%s\nHP: %s\n%.1f studs", target.DisplayName, target.Character.Humanoid.Health, (target.Character.Head.Position - player.Character.Head.Position).Magnitude)
+    label.TextColor3 = Color3.fromRGB(0, 255, 0)
+    label.BackgroundTransparency = 1
+    label.TextStrokeTransparency = 0
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 14
+    label.Parent = bill
+
+    espCache[target] = bill
+end
+
+local function RemoveESP(target)
+    if espCache[target] then
+        espCache[target]:Destroy()
+        espCache[target] = nil
+    end
+end
+
+local function UpdateESP()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
+            if espEnabled then
+                CreateESP(p)
+                local bill = espCache[p]
+                if bill then
+                    bill.TextLabel.Text = string.format("%s\nHP: %s\n%.1f studs", p.DisplayName, p.Character.Humanoid.Health, (p.Character.Head.Position - player.Character.Head.Position).Magnitude)
                 end
+            else
+                RemoveESP(p)
             end
         end
-        wait(0.5)
     end
-end)
+end
 
-task.spawn(function()
-    while true do
-        if godmodeEnabled then
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.Health = char.Humanoid.MaxHealth
-                if char:FindFirstChild("BreakJointsOnDeath") then
-                    char.BreakJointsOnDeath = false
-                end
-                if char.Humanoid:GetState() == Enum.HumanoidStateType.Dead then
-                    char.Humanoid.Health = char.Humanoid.MaxHealth
-                end
+Tabs.ESP:AddToggle("EnableESP", {
+    Title = "Enable Player ESP",
+    Default = false,
+    Callback = function(Value)
+        espEnabled = Value
+        if not Value then
+            for _, v in pairs(espCache) do
+                v:Destroy()
             end
+            espCache = {}
         end
-        wait(0.1)
     end
-end)
+})
 
-Rayfield:Notify({Title = "Loaded!", Content = "Advanced Kill GUI (Rayfield Edition) loaded."})
+RunService.RenderStepped:Connect(UpdateESP)
+
+-- SaveManager
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("50kgMuscleLegends")
+SaveManager:SetFolder("50kgMuscleLegends/config")
+InterfaceManager:BuildInterfaceSection(Tabs.Misc)
+SaveManager:BuildConfigSection(Tabs.Misc)
+
+Window:SelectTab(1)
+Notify("Loaded", "50kg Muscle Legends Fluent Loader + PACK MODE Loaded!")
