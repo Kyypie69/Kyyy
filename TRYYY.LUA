@@ -1661,12 +1661,10 @@ local speedGrind = rebirthFarmFolder:AddSwitch("Fast Strength", function(bool)
     end
 end)
    
-
-
 --------------------------------------------------------------------
 --  PLAYER-DROPDOWN  +  VIEW / UNVIEW  +  WHITELIST-DROPDOWN
 --------------------------------------------------------------------
-local killerTab = window:GetTab("Killer")   -- already created earlier
+local killerTab = window:AddTab("Killer") 
 
 ------  helpers  ------
 local Players   = game:GetService("Players")
