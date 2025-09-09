@@ -2013,43 +2013,29 @@ local autoKillTargetSwitch = killerTab:AddSwitch("Kill Target Automatically", fu
     end
 end)
 
--- Manual kill buttons
-killerTab:AddButton("Remove Everyone (Except Whitelist)", function()
-    pcall(function()
-        for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer then
-                local isWhitelisted = false
-                for _, whitelistedInfo in ipairs(_G.whitelistedPlayers) do
-                    if whitelistedInfo:find(player.Name, 1, true) then
-                        isWhitelisted = true
-                        break
-                    end
-                end
-                
-                if not isWhitelisted and player.Character and 
-                   player.Character:FindFirstChild("HumanoidRootPart") then
-                    killPlayer(player)
-                    task.wait(0.05)
-                end
-            end
-        end
-    end)
-end)
+-- ===== VIEW / UN-VIEW PLAYER =================================================
+local viewBtn, unviewBtn -- references so we can enable/disable them
 
-killerTab:AddButton("Delete Target", function()
-    if _G.targetPlayer ~= "" then
-        pcall(function()
-            local targetName = _G.targetPlayer:match("^([^%(]+)")
-            if targetName then
-                targetName = targetName:gsub("%s+$", "")
-                local targetPlayer = game.Players:FindFirstChild(targetName)
-                if targetPlayer then
-                    killPlayer(targetPlayer)
-                end
-            end
-        end)
+-- helper to spectate the currently-selected target
+local function spectateTarget()
+    if not _G.targetPlayer or _G.targetPlayer == "" then return end
+    local name = _G.targetPlayer:match("^([%w_]+)")          -- strip " (DisplayName)"
+    local tgt  = game.Players:FindFirstChild(name)
+    if tgt and tgt.Character and tgt.Character:FindFirstChildOfClass("Humanoid") then
+        workspace.CurrentCamera.CameraSubject = tgt.Character:FindFirstChildOfClass("Humanoid")
     end
-end)
+end
+
+-- helper to return camera to yourself
+local function unspectate()
+    local me = game.Players.LocalPlayer
+    if me.Character and me.Character:FindFirstChildOfClass("Humanoid") then
+        workspace.CurrentCamera.CameraSubject = me.Character:FindFirstChildOfClass("Humanoid")
+    end
+end
+
+viewBtn   = killerTab:AddButton("View Target", spectateTarget)
+unviewBtn = killerTab:AddButton("Un-view / Stop Spectating", unspectate)
 
 -- Inicializar variables de seguimiento
 local sessionStartTime = os.time()
@@ -2220,82 +2206,3 @@ statsFolder:AddButton("Copy Statistics", function()
     
     setclipboard(statsText)
 end)
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Helper to get player display, fallback to Username if needed
-local function getDisplay(player)
-    if player.DisplayName ~= player.Name then
-        return ("%s (@%s)"):format(player.DisplayName, player.Name)
-    else
-        return player.Name
-    end
-end
-
--- Generate options for dropdown, map display to player
-local function getPlayerDropdownOptions()
-    local options, map = {}, {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local display = getDisplay(player)
-            table.insert(options, display)
-            map[display] = player
-        end
-    end
-    return options, map
-end
-
--- Initial options and mapping
-local dropdownOptions, playerMap = getPlayerDropdownOptions()
-
-local Dropdown = Tabs.Killer:CreateDropdown("SpectatePlayer", {
-    Title = "Spectate Player",
-    Description = "Piliin ang player na panoorin",
-    Options = dropdownOptions,
-    Default = "",
-    Callback = function(Value)
-        local targetPlayer = playerMap[Value]
-        if targetPlayer and targetPlayer.Character then
-            local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                workspace.CurrentCamera.CameraSubject = humanoid
-            end
-        end
-    end
-})
-
--- Update dropdown and map on player changes
-local function updatePlayerList()
-    local newOptions, newMap = getPlayerDropdownOptions()
-    playerMap = newMap
-    if Dropdown.SetValues then
-        Dropdown:SetValues(newOptions)
-    else
-        Dropdown.Options = newOptions
-    end
-end
-
-Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoving:Connect(updatePlayerList)
-
-task.spawn(function()
-    while true do
-        updatePlayerList()
-        task.wait(2)
-    end
-end)
-
--- Stop Spectating Button
-Tabs.Killer:CreateButton({
-    Title = "Stop Spying",
-    Description = "Bumalik ang camera sa iyong character",
-    Callback = function()
-        if LocalPlayer.Character then
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                workspace.CurrentCamera.CameraSubject = humanoid
-            end
-        end
-    end
-})
