@@ -31,7 +31,7 @@ end
 setupAntiAFK()
 
 -- Create Main Window
-local window = library:AddWindow("50kg x Autokill Script", {
+local window = library:AddWindow("KYY PIE", {
     main_color = Color3.fromRGB(0, 0, 0),
     min_size = Vector2.new(400, 382),
     can_resize = true,
@@ -42,7 +42,7 @@ local mainTab = window:AddTab("Main")
 local farmPlusTab = window:AddTab("Farm")
 mainTab:Show() -- Show this tab by default
 
-mainTab:AddLabel("50kg on top")
+mainTab:AddLabel("COPIED SCRIPT")
 
 
 -- Add Anti-AFK toggle
@@ -2212,6 +2212,152 @@ statsFolder:AddButton("Copy Statistics", function()
         statsText = statsText .. "Kills Gained: " .. formatNumberWithCommas(killsGain) .. "\n"
         statsText = statsText .. "Brawls Gained: " .. formatNumberWithCommas(brawlsGain) .. "\n"
     end
+
+local KillerV2Tab = Window:AddTab("Killer V2")
+KillingV2Tab:AddSwitch("Auto Punch", function(state)
+    getgenv().autopunch = state
+    task.spawn(function()
+        while getgenv().autopunch and LocalPlayer.Character do
+            local punch = LocalPlayer.Character:FindFirstChild("Punch")
+            if not punch then
+                punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+                if punch then
+                    LocalPlayer.Character.Humanoid:EquipTool(punch)
+                end
+            end
+            if punch then
+                ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+            end
+            task.wait(0.1)
+        end
+    end)
+end)
+KillingV2Tab:AddSwitch("Fast Punch", function(state)
+    getgenv().fastPunch = state
+    task.spawn(function()
+        while getgenv().fastPunch and LocalPlayer.Character do
+            local punch = LocalPlayer.Character:FindFirstChild("Punch")
+            if not punch then
+                punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+                if punch then
+                    LocalPlayer.Character.Humanoid:EquipTool(punch)
+                end
+            end
+            if punch then
+                ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+            end
+            task.wait(0.05)
+        end
+    end)
+end)
+KillingV2Tab:AddSwitch("Auto Kill Everyone", function(state)
+    getgenv().autoKillActive = state
+    task.spawn(function()
+        while getgenv().autoKillActive and LocalPlayer.Character do
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and not table.find(getgenv().whitelist or {}, player.Name) then
+                    if player.Character and player.Character.HumanoidRootPart then
+                        if getgenv().killMethod == "Teleport" then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(player.Character.HumanoidRootPart.Position)
+                        end
+                        ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                        ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
+end)
+KillingV2Tab:AddDropdown("Select Kill Method", {"Teleport", "Non-Teleport"}, function(method)
+    getgenv().killMethod = method
+    print("Kill Method set to: " .. method)
+end)
+KillingV2Tab:AddDropdown("Whitelist Players", function()
+    local playerNames = {LocalPlayer.Name}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerNames, player.Name)
+        end
+    end
+    return playerNames
+end, function(name)
+    getgenv().whitelist = getgenv().whitelist or {}
+    if name ~= LocalPlayer.Name and not table.find(getgenv().whitelist, name) then
+        table.insert(getgenv().whitelist, name)
+    end
+end)
+Players.PlayerAdded:Connect(function(player)
+    if getgenv().autoKillActive and player ~= LocalPlayer and not table.find(getgenv().whitelist or {}, player.Name) then
+        task.spawn(function()
+            while getgenv().autoKillActive and player.Character and LocalPlayer.Character do
+                if player.Character.HumanoidRootPart then
+                    if getgenv().killMethod == "Teleport" then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(player.Character.HumanoidRootPart.Position)
+                    end
+                    ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                    ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+Players.PlayerRemoving:Connect(function() end)
+KillingV2Tab:AddSwitch("Fast Kill Aura", function(state)
+    getgenv().fastKillAura = state
+    task.spawn(function()
+        while getgenv().fastKillAura and LocalPlayer.Character do
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and not table.find(getgenv().whitelist or {}, player.Name) and player.Character and player.Character.HumanoidRootPart then
+                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                    if distance <= (getgenv().ringAuraRadius or 10) then
+                        ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                        ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+                    end
+                end
+            end
+            task.wait(0.05)
+        end
+    end)
+end)
+KillingV2Tab:AddLabel("---Single Kill---")
+KillingV2Tab:AddTextBox("Player Username", function(name)
+    getgenv().targetPlayerName = name
+end)
+KillingV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
+    getgenv().autoFastKillPlayer = state
+    task.spawn(function()
+        while getgenv().autoFastKillPlayer and LocalPlayer.Character and getgenv().targetPlayerName do
+            local target = Players:FindFirstChild(getgenv().targetPlayerName)
+            if target and target.Character and target.Character.HumanoidRootPart then
+                if getgenv().killMethod == "Teleport" then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(target.Character.HumanoidRootPart.Position)
+                end
+                ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+            end
+            task.wait(0.05)
+        end
+    end)
+end)
+KillingV2Tab:AddSwitch("Spy Player", function(state)
+    getgenv().spyPlayer = state
+    task.spawn(function()
+        while getgenv().spyPlayer and getgenv().targetPlayerName do
+            local target = Players:FindFirstChild(getgenv().targetPlayerName)
+            if target and target.Character then
+                Workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
+            end
+            task.wait(1)
+        end
+        if LocalPlayer.Character then
+            Workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+    end)
+end)
     
     setclipboard(statsText)
 end)
