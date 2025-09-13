@@ -767,7 +767,7 @@ for title, rockName in pairs(glitchV2Data) do
             end
         end)
     end)
-end)
+end
 
 local KillingV2Tab = Window:AddTab("Killing V2")
 KillingV2Tab:AddSwitch("Auto Punch", function(state)
