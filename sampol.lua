@@ -9,11 +9,12 @@ local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercon
 -- 2.  Create the main window
 local Window = Fluent:CreateWindow({
     Title = "KYY",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 620),
+    TabWidth = 125,
+    Size = UDim2.fromOffset(600, 325),
     Position = UDim2.fromOffset(50, 50),
+    Resize = false,
     Acrylic = true,
-    Theme = "Dark",               -- “Dark” | “Light” | “Aqua” ...
+    Theme = "Amethyst Dark",               -- “Dark” | “Light” | “Aqua” ...
     MinimizeKey = Enum.KeyCode.LeftControl -- optional
 })
 
@@ -43,22 +44,22 @@ local WS = game:GetService("Workspace")
 -- TABS
 -- ===================================================================
 local Tabs = {
-    Main     = Window:AddTab({Title = "Main",     Icon = "home"}),
-    Killing  = Window:AddTab({Title = "Killing",  Icon = "sword"}),
-    Stats    = Window:AddTab({Title = "Stats",    Icon = "chart-line"}),
-    FarmPlus = Window:AddTab({Title = "Farming",   Icon = "dumbbell"}),
-    Server   = Window:AddTab({Title = "Server",   Icon = "server"}),
-    Eggs     = Window:AddTab({Title = "Eggs",     Icon = "egg"}),
-    Players  = Window:AddTab({Title = "Players",  Icon = "user"}),
-    Credits  = Window:AddTab({Title = "Credits",  Icon = "info-circle"}),
-    Paid     = Window:AddTab({Title = "Paid Tab", Icon = "crown"})
+    Main     = Window:CreateTab({Title = "Main",     Icon = "home"}),
+    Killing  = Window:CreateTab({Title = "Killing",  Icon = "sword"}),
+    Stats    = Window:CreateTab({Title = "Stats",    Icon = "chart-line"}),
+    FarmPlus = Window:CreateTab({Title = "Farming",   Icon = "dumbbell"}),
+    Server   = Window:CreateTab({Title = "Server",   Icon = "server"}),
+    Eggs     = Window:CreateTab({Title = "Eggs",     Icon = "egg"}),
+    Players  = Window:CreateTab({Title = "Players",  Icon = "user"}),
+    Credits  = Window:CreateTab({Title = "Credits",  Icon = "info-circle"}),
+    Paid     = Window:CreateTab({Title = "Paid Tab", Icon = "crown"})
 }
 
 -- ===================================================================
 -- MAIN TAB
 -- ===================================================================
 do
-    local autoEat30 = Tabs.Main:AddToggle({Title = "Auto Eat Protein Egg Every 30 Minutes", Default = false})
+    local Toggle = Tabs.Main:CreateToggle({Title = "Auto Eat Protein Egg Every 30 Minutes", Default = false})
     autoEat30:OnChanged(function(v)
         getgenv().autoEatProteinEggActive = v
         if v then
@@ -72,7 +73,7 @@ do
         end
     end)
 
-    local autoEat1h = Tabs.Main:AddToggle({Title = "Auto Eat Protein Egg Every 1 Hour", Default = false})
+    local Toggle = Tabs.Main:CreateToggle({Title = "Auto Eat Protein Egg Every 1 Hour", Default = false})
     autoEat1h:OnChanged(function(v)
         getgenv().autoEatProteinEggHourly = v
         if v then
@@ -308,7 +309,7 @@ end
 -- PLAYERS TAB
 -- ===================================================================
 do
-    local wsInput = Tabs.Players:AddInput({Title = "Walkspeed", Placeholder = "16"})
+    local Toggle = Tabs.Players:AddInput({Title = "Walkspeed", Placeholder = "16"})
     wsInput:OnChanged(function(v)
         getgenv().walkspeed = math.clamp(tonumber(v) or 16, 0, 1000)
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -316,7 +317,7 @@ do
         end
     end)
 
-    local jpInput = Tabs.Players:AddInput({Title = "JumpPower", Placeholder = "50"})
+    local Toggle = Tabs.Players:AddInput({Title = "JumpPower", Placeholder = "50"})
     jpInput:OnChanged(function(v)
         getgenv().jumpPower = math.clamp(tonumber(v) or 50, 0, 500)
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -324,7 +325,7 @@ do
         end
     end)
 
-    local hhInput = Tabs.Players:AddInput({Title = "HipHeight", Placeholder = "0"})
+    local Toggle = Tabs.Players:AddInput({Title = "HipHeight", Placeholder = "0"})
     hhInput:OnChanged(function(v)
         getgenv().hipHeight = math.clamp(tonumber(v) or 0, -10, 100)
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -370,7 +371,7 @@ end
 -- PAID TAB
 -- ===================================================================
 do
-    local fg = Tabs.Paid:AddSection({Title = "Fast Glitch"})
+    local Toggle = Tabs.Paid:AddSection({Title = "Fast Glitch"})
     local rocks = {
         {Title = "Tiny Rock",          Name = "TinyIslandRock",      Dur = 0},
         {Title = "Punching Rock",      Name = "PunchingIslandRock",  Dur = 10},
