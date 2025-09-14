@@ -1,15 +1,21 @@
 -- Elerium v2 UI Library Implementation
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library//main/Library ", true))()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local startTime = os.time()
+local startRebirths = player.leaderstats.Rebirths.Value
+local displayName = player.DisplayName
 
-local Window = library:AddWindow("Doca V1 | Paid Version", {
+local Window = library:AddWindow("KYY | COPIED SCRIPT", {
     main_color = Color3.fromRGB(255, 0, 0),
     min_size = Vector2.new(500, 600),
     can_resize = true
 })
 
-local MainTab = Window:AddTab("Main")
-local LocalPlayersFolder = MainTab:AddFolder("Local Players")
-LocalPlayersFolder:AddSwitch("Auto Eat Protein Egg Every 30 Minutes", function(state)
+local mainTab = Window:AddTab("Main")
+local autoEatFolder = mainTab:AddFolder("BOOST")
+mainTab:AddSwitch("Auto Eat Protein Egg Every 30 Minutes", function(state)
     getgenv().autoEatProteinEggActive = state
     task.spawn(function()
         while getgenv().autoEatProteinEggActive and LocalPlayer.Character do
@@ -22,7 +28,7 @@ LocalPlayersFolder:AddSwitch("Auto Eat Protein Egg Every 30 Minutes", function(s
         end
     end)
 end)
-LocalPlayersFolder:AddSwitch("Auto Eat Protein Egg Every 1 hour", function(state)
+mainTab:AddSwitch("Auto Eat Protein Egg Every 1 hour", function(state)
     getgenv().autoEatProteinEggHourly = state
     task.spawn(function()
         while getgenv().autoEatProteinEggHourly and LocalPlayer.Character do
@@ -161,8 +167,8 @@ OpStuffFolder:AddButton("Remove Ad Portal", function()
     end
 end)
 
-local KillingTab = Window:AddTab("Killing")
-KillingTab:AddSwitch("Auto Equip Punch", function(state)
+local killingTab = window:AddTab("Killing")
+killingTab:AddSwitch("Auto Equip Punch", function(state)
     getgenv().autoEquipPunch = state
     task.spawn(function()
         while getgenv().autoEquipPunch and LocalPlayer.Character do
@@ -194,7 +200,7 @@ KillingTab:AddSwitch("Auto Punch {With Movement}", function(state)
         end
     end)
 end)
-KillingTab:AddSwitch("Auto Punch", function(state)
+killingTab:AddSwitch("Auto Punch", function(state)
     getgenv().autopunch = state
     task.spawn(function()
         while getgenv().autopunch and LocalPlayer.Character do
@@ -207,7 +213,7 @@ KillingTab:AddSwitch("Auto Punch", function(state)
         end
     end)
 end)
-KillingTab:AddSwitch("Unlock Fast Punch", function(state)
+killingTab:AddSwitch("Unlock Fast Punch", function(state)
     getgenv().fastPunch = state
     task.spawn(function()
         while getgenv().fastPunch and LocalPlayer.Character do
@@ -220,14 +226,14 @@ KillingTab:AddSwitch("Unlock Fast Punch", function(state)
         end
     end)
 end)
-KillingTab:AddTextBox("Whitelist Player", function(name)
+killingTab:AddTextBox("Whitelist Player", function(name)
     getgenv().whitelist = getgenv().whitelist or {}
     table.insert(getgenv().whitelist, name)
 end)
 KillingTab:AddButton("Clear Whitelist", function()
     getgenv().whitelist = {}
 end)
-KillingTab:AddSwitch("Auto Kill", function(state)
+local autoKill = killingTab:AddSwitch("Auto Kill", function(state)
     getgenv().autokill = state
     task.spawn(function()
         while getgenv().autokill and LocalPlayer.Character do
@@ -244,7 +250,7 @@ KillingTab:AddSwitch("Auto Kill", function(state)
         end
     end)
 end)
-KillingTab:AddSwitch("Auto Kill Players", function(state)
+local autoKill = killingTab:AddSwitch("Auto Kill Players", function(state)
     getgenv().autoKillActive = state
     local function onPlayerAdded(player)
         if getgenv().autoKillActive and player ~= LocalPlayer and not table.find(getgenv().whitelist or {}, player.Name) then
@@ -267,7 +273,7 @@ KillingTab:AddSwitch("Auto Kill Players", function(state)
         end
     end)
 end)
-KillingTab:AddDropdown("Players", function()
+killingTab:AddDropdown("Players", function()
     local playerNames = {LocalPlayer.Name}
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -276,7 +282,7 @@ KillingTab:AddDropdown("Players", function()
     end
     return playerNames
 end)
-KillingTab:AddTextBox("Kill Player", function(name)
+killingTab:AddTextBox("Kill Player", function(name)
     local target = Players:FindFirstChild(name)
     if target and target.Character and LocalPlayer.Character then
         task.spawn(function()
@@ -289,8 +295,8 @@ KillingTab:AddTextBox("Kill Player", function(name)
         end)
     end
 end)
-KillingTab:AddLabel("---------------")
-KillingTab:AddTextBox("View Player", function(name)
+killingTab:AddLabel("Player")
+killingTab:AddTextBox("View Player", function(name)
     local target = Players:FindFirstChild(name)
     if target and target.Character then
         Workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
@@ -415,9 +421,9 @@ task.spawn(function()
     end
 end)
 
-local FarmPlusTab = Window:AddTab("Farm++")
-local AutoGymFolder = FarmPlusTab:AddFolder("Auto Gym")
-AutoGymFolder:AddLabel("Jungle Gym")
+local farmPlusTab = window:AddTab("Farm Rock")
+local autoGymFolder = farmPlusTab:AddFolder("Auto Gym")
+autoGymFolder:AddLabel("Jungle Gym")
 local jungleGymMachines = {
     ["Jungle Bench"] = "autoJungleBench",
     ["Jungle Bar Lift"] = "autoJungleBarLift",
@@ -425,7 +431,7 @@ local jungleGymMachines = {
     ["Jungle Squat"] = "autoJungleSquat"
 }
 for machineName, varName in pairs(jungleGymMachines) do
-    AutoGymFolder:AddSwitch("Auto " .. machineName, function(state)
+    autoGymFolder:AddSwitch("Auto " .. machineName, function(state)
         getgenv()[varName] = state
         task.spawn(function()
             while getgenv()[varName] and LocalPlayer.Character do
@@ -440,7 +446,7 @@ for machineName, varName in pairs(jungleGymMachines) do
         end)
     end)
 end
-local AutoEquipFolder = FarmPlusTab:AddFolder("Auto Equip Weight Tools")
+local autoEquipFolder = farmPlusTab:AddFolder("Auto Equip Weight Tools")
 local toolSwitches = {
     ["Auto Handstands"] = "Handstands",
     ["Auto Weight"] = "Weight",
@@ -463,8 +469,8 @@ for label, toolName in pairs(toolSwitches) do
     end)
 end
 
-local ServerTab = Window:AddTab("Server")
-ServerTab:AddSwitch("Auto Kill Good Karma", function(state)
+local serverTab = Window:AddTab("Server")
+serverTab:AddSwitch("Auto Kill Good Karma", function(state)
     getgenv().autoKillGoodKarma = state
     task.spawn(function()
         while getgenv().autoKillGoodKarma and LocalPlayer.Character do
@@ -479,7 +485,7 @@ ServerTab:AddSwitch("Auto Kill Good Karma", function(state)
         end
     end)
 end)
-ServerTab:AddSwitch("Auto Kill Evil Karma", function(state)
+serverTab:AddSwitch("Auto Kill Evil Karma", function(state)
     getgenv().autoKillEvilKarma = state
     task.spawn(function()
         while getgenv().autoKillEvilKarma and LocalPlayer.Character do
@@ -494,8 +500,8 @@ ServerTab:AddSwitch("Auto Kill Evil Karma", function(state)
         end
     end)
 end)
-ServerTab:AddLabel("Ring Aura")
-ServerTab:AddTextBox("Whitelist Player", function(name)
+serverTab:AddLabel("Ring Aura")
+serverTab:AddTextBox("Whitelist Player", function(name)
     getgenv().whitelist = getgenv().whitelist or {}
     table.insert(getgenv().whitelist, name)
 end)
@@ -526,8 +532,8 @@ ServerTab:AddSwitch("Ring Aura", function(state)
         end
     end)
 end)
-ServerTab:AddLabel("Fast Rebirths")
-ServerTab:AddSwitch("Fast Rebirths | Required New Packs |", function(state)
+serverTab:AddLabel("Fast Rebirths")
+serverTab:AddSwitch("Fast Rebirths | Required New Packs |", function(state)
     getgenv().fastRebirths = state
     task.spawn(function()
         while getgenv().fastRebirths and LocalPlayer.Character do
@@ -536,7 +542,7 @@ ServerTab:AddSwitch("Fast Rebirths | Required New Packs |", function(state)
         end
     end)
 end)
-ServerTab:AddSwitch("Fast Gain", function(state)
+serverTab:AddSwitch("Fast Gain", function(state)
     getgenv().fastGain = state
     task.spawn(function()
         while getgenv().fastGain and LocalPlayer.Character do
@@ -545,7 +551,7 @@ ServerTab:AddSwitch("Fast Gain", function(state)
         end
     end)
 end)
-ServerTab:AddSwitch("Hide Frames", function(state)
+serverTab:AddSwitch("Hide Frames", function(state)
     getgenv().hideFrames = state
     task.spawn(function()
         while getgenv().hideFrames do
@@ -559,11 +565,11 @@ ServerTab:AddSwitch("Hide Frames", function(state)
     end)
 end)
 
-local EggsTab = Window:AddTab("Eggs")
-EggsTab:AddTextBox("Select Pet", function(petName)
+local eggsTab = window:AddTab("Eggs")
+eggsTab:AddTextBox("Select Pet", function(petName)
     getgenv().selectedPet = petName
 end)
-EggsTab:AddSwitch("Auto Buy Pet", function(state)
+eggsTab:AddSwitch("Auto Buy Pet", function(state)
     getgenv().autoBuyPet = state
     task.spawn(function()
         while getgenv().autoBuyPet and LocalPlayer.Character do
@@ -581,10 +587,10 @@ local crystals = {
     "Legends Crystal", "Dark Nebula Crystal", "Muscle Elite Crystal", "Galaxy Oracle Crystal",
     "Battle Legends Crystal", "Sky Eclipse Crystal", "Jungle Crystal"
 }
-EggsTab:AddDropdown("Select Crystal", crystals, function(crystal)
+eggsTab:AddDropdown("Select Crystal", crystals, function(crystal)
     getgenv().crystal = crystal
 end)
-EggsTab:AddSwitch("Auto Hatch Crystal", function(state)
+eggsTab:AddSwitch("Auto Hatch Crystal", function(state)
     getgenv().autoHatchCrystal = state
     task.spawn(function()
         while getgenv().autoHatchCrystal and LocalPlayer.Character do
@@ -596,11 +602,11 @@ EggsTab:AddSwitch("Auto Hatch Crystal", function(state)
     end)
 end)
 
-local PlayersTab = Window:AddTab("Players")
-PlayersTab:AddTextBox("Walkspeed", function(value)
+local playersTab = window:AddTab("Players")
+playersTab:AddTextBox("Walkspeed", function(value)
     getgenv().walkspeed = math.clamp(tonumber(value) or 16, 0, 1000)
 end)
-PlayersTab:AddSwitch("Set Walkspeed", function(state)
+playersTab:AddSwitch("Set Walkspeed", function(state)
     getgenv().setWalkspeed = state
     task.spawn(function()
         while getgenv().setWalkspeed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") do
@@ -609,23 +615,23 @@ PlayersTab:AddSwitch("Set Walkspeed", function(state)
         end
     end)
 end)
-PlayersTab:AddTextBox("JumpPower", function(value)
+playersTab:AddTextBox("JumpPower", function(value)
     getgenv().jumpPower = math.clamp(tonumber(value) or 50, 0, 500)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.JumpPower = getgenv().jumpPower
     end
 end)
-PlayersTab:AddTextBox("HipHeight", function(value)
+playersTab:AddTextBox("HipHeight", function(value)
     getgenv().hipHeight = math.clamp(tonumber(value) or 0, -10, 100)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.HipHeight = getgenv().hipHeight
     end
 end)
-PlayersTab:AddTextBox("Max Zoom Distance", function(value)
+playersTab:AddTextBox("Max Zoom Distance", function(value)
     LocalPlayer.CameraMaxZoomDistance = math.clamp(tonumber(value) or 128, 0, 1000)
 end)
-PlayersTab:AddLabel("--------")
-PlayersTab:AddSwitch("Lock Client Position", function(state)
+playersTab:AddLabel("--------")
+playersTab:AddSwitch("Lock Client Position", function(state)
     getgenv().lockPosition = state
     if state then
         getgenv().lockedPos = LocalPlayer.Character.HumanoidRootPart.CFrame
@@ -640,16 +646,16 @@ PlayersTab:AddSwitch("Lock Client Position", function(state)
         end
     end
 end)
-PlayersTab:AddButton("Remove Punch", function()
+playersTab:AddButton("Remove Punch", function()
     local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character:FindFirstChild("Punch")
     if punch then
         punch:Destroy()
     end
 end)
-PlayersTab:AddButton("Recover Punch", function()
+playersTab:AddButton("Recover Punch", function()
     ReplicatedStorage.rEvents.giveTool:FireServer("Punch")
 end)
-PlayersTab:AddSwitch("Infinite Jump", function(state)
+playersTab:AddSwitch("Infinite Jump", function(state)
     getgenv().infiniteJump = state
     game:GetService("UserInputService").JumpRequest:Connect(function()
         if getgenv().infiniteJump and LocalPlayer.Character then
@@ -657,7 +663,7 @@ PlayersTab:AddSwitch("Infinite Jump", function(state)
         end
     end)
 end)
-PlayersTab:AddSwitch("Noclip", function(state)
+playersTab:AddSwitch("Noclip", function(state)
     getgenv().noclip = state
     if state then
         getgenv().noclipConnection = RunService.Stepped:Connect(function()
@@ -675,13 +681,13 @@ PlayersTab:AddSwitch("Noclip", function(state)
         end
     end
 end)
-PlayersTab:AddButton("Anti AFK", function()
+playersTab:AddButton("Anti AFK", function()
     game:GetService("VirtualUser").CaptureController:ClickButton2(Vector2.new())
     game:GetService("VirtualUser").Idled:Connect(function()
         game:GetService("VirtualUser").CaptureController:ClickButton2(Vector2.new())
     end)
 end)
-PlayersTab:AddButton("Anti Lag", function()
+playersTab:AddButton("Anti Lag", function()
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("BasePart") and not v.Parent:IsA("Model") then
             v.Material = Enum.Material.SmoothPlastic
@@ -689,20 +695,20 @@ PlayersTab:AddButton("Anti Lag", function()
         end
     end
 end)
-PlayersTab:AddButton("ChatSpy", function()
+playersTab:AddButton("ChatSpy", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/CAXAP26BKyCH/ChatSpy/main/ChatSpy"))()
 end)
 
-local CreditsTab = Window:AddTab("Credits")
-CreditsTab:AddLabel("This Script made by Doca")
-CreditsTab:AddLabel("Roblox: Xx_GPWArka")
-CreditsTab:AddLabel("Discord: itsdocas_60003")
-CreditsTab:AddButton("Copy Discord Invite link", function()
-    setclipboard("https://discord.gg/itsdocas_60003")
+local creditsTab = window:AddTab("Credits")
+creditsTab:AddLabel("KYY PIE")
+creditsTab:AddLabel("Roblox: Markyy_0311")
+creditsTab:AddLabel("Discord: markyy11")
+creditsTab:AddButton("Copy Discord Invite link", function()
+    setclipboard("https://discord.gg/CCUdkJWP")
 end)
 
-local PaidTab = Window:AddTab("Paid Tab")
-local FastGlitchFolder = PaidTab:AddFolder("Fast Glitch")
+local fastGlitchTab = Window:AddTab("Fast Glitch Tab")
+local fastGlitchFolder = fastGlitchTab:AddFolder("Fast Glitch")
 local rockData = {
     {Name = "TinyIslandRock", Title = "Tiny Rock", Description = "Fast Glitch Tiny Rock (0)", Durability = 0},
     {Name = "PunchingIslandRock", Title = "Punching Rock", Description = "Fast Glitch Punching Rock (10)", Durability = 10},
@@ -716,7 +722,7 @@ local rockData = {
     {Name = "AncientJungleRock", Title = "Ancient Jungle Rock", Description = "Fast Glitch Ancient Jungle Rock (10M)", Durability = 10000000}
 }
 for _, rock in ipairs(rockData) do
-    FastGlitchFolder:AddSwitch(rock.Title, function(state)
+    fastGlitchFolder:AddSwitch(rock.Title, function(state)
         getgenv().fastGlitch = getgenv().fastGlitch or {}
         getgenv().fastGlitch[rock.Name] = state
         task.spawn(function()
@@ -738,7 +744,7 @@ for _, rock in ipairs(rockData) do
         end)
     end)
 end
-local FastGlitchV2Folder = PaidTab:AddFolder("Fast Glitch V2")
+local fastGlitchV2Folder = fastGlitchTab:AddFolder("Fast Glitch V2")
 local glitchV2Data = {
     ["Tiny Rock Fast Glitch"] = "Tiny Island Rock",
     ["Punching Rock Fast Glitch"] = "Punching Rock",
@@ -752,7 +758,7 @@ local glitchV2Data = {
     ["Ancient Jungle Fast Glitch"] = "Ancient Jungle Rock"
 }
 for title, rockName in pairs(glitchV2Data) do
-    FastGlitchV2Folder:AddSwitch(title, function(state)
+    fastGlitchV2Folder:AddSwitch(title, function(state)
         getgenv().fastGlitchV2 = getgenv().fastGlitchV2 or {}
         getgenv().fastGlitchV2[rockName] = state
         task.spawn(function()
@@ -769,8 +775,8 @@ for title, rockName in pairs(glitchV2Data) do
     end)
 end
 
-local KillingV2Tab = Window:AddTab("Killing V2")
-KillingV2Tab:AddSwitch("Auto Punch", function(state)
+local killingV2Tab = window:AddTab("Killing V2")
+killingV2Tab:AddSwitch("Auto Punch", function(state)
     getgenv().autopunch = state
     task.spawn(function()
         while getgenv().autopunch and LocalPlayer.Character do
@@ -789,7 +795,7 @@ KillingV2Tab:AddSwitch("Auto Punch", function(state)
         end
     end)
 end)
-KillingV2Tab:AddSwitch("Fast Punch", function(state)
+killingV2Tab:AddSwitch("Fast Punch", function(state)
     getgenv().fastPunch = state
     task.spawn(function()
         while getgenv().fastPunch and LocalPlayer.Character do
@@ -808,7 +814,7 @@ KillingV2Tab:AddSwitch("Fast Punch", function(state)
         end
     end)
 end)
-KillingV2Tab:AddSwitch("Auto Kill Everyone", function(state)
+killingV2Tab:AddSwitch("Auto Kill Everyone", function(state)
     getgenv().autoKillActive = state
     task.spawn(function()
         while getgenv().autoKillActive and LocalPlayer.Character do
@@ -827,11 +833,11 @@ KillingV2Tab:AddSwitch("Auto Kill Everyone", function(state)
         end
     end)
 end)
-KillingV2Tab:AddDropdown("Select Kill Method", {"Teleport", "Non-Teleport"}, function(method)
+killingV2Tab:AddDropdown("Select Kill Method", {"Teleport", "Non-Teleport"}, function(method)
     getgenv().killMethod = method
     print("Kill Method set to: " .. method)
 end)
-KillingV2Tab:AddDropdown("Whitelist Players", function()
+killingV2Tab:AddDropdown("Whitelist Players", function()
     local playerNames = {LocalPlayer.Name}
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -862,7 +868,7 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 Players.PlayerRemoving:Connect(function() end)
-KillingV2Tab:AddSwitch("Fast Kill Aura", function(state)
+killingV2Tab:AddSwitch("Fast Kill Aura", function(state)
     getgenv().fastKillAura = state
     task.spawn(function()
         while getgenv().fastKillAura and LocalPlayer.Character do
@@ -879,11 +885,11 @@ KillingV2Tab:AddSwitch("Fast Kill Aura", function(state)
         end
     end)
 end)
-KillingV2Tab:AddLabel("---Single Kill---")
-KillingV2Tab:AddTextBox("Player Username", function(name)
+killingV2Tab:AddLabel("Single Kill")
+killingV2Tab:AddTextBox("Player Username", function(name)
     getgenv().targetPlayerName = name
 end)
-KillingV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
+killingV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
     getgenv().autoFastKillPlayer = state
     task.spawn(function()
         while getgenv().autoFastKillPlayer and LocalPlayer.Character and getgenv().targetPlayerName do
@@ -899,7 +905,7 @@ KillingV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
         end
     end)
 end)
-KillingV2Tab:AddSwitch("Spy Player", function(state)
+killingV2Tab:AddSwitch("Spy Player", function(state)
     getgenv().spyPlayer = state
     task.spawn(function()
         while getgenv().spyPlayer and getgenv().targetPlayerName do
