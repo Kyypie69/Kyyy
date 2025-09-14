@@ -1,313 +1,318 @@
--- =============================================================================
---  MUSCLE LEGENDS – MEGA HUB  (AutoKillCode + sampol  in  ONE  library)
--- =============================================================================
--- 1.  Load the Elerium v2 UI library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library", true))()
+-- Elerium v2 UI Library Implementation
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/memejames/elerium-v2-ui-library//main/Library", true))()
+local Players               = game:GetService("Players")
+local RunService            = game:GetService("RunService")
+local StarterGui            = game:GetService("StarterGui")
 
--- =============================================================================
--- 2.  Fast aliases
--- =============================================================================
-local RS  = game:GetService("ReplicatedStorage")
-local WS  = game:GetService("Workspace")
-local LG  = game:GetService("Lighting")
-local UIS = game:GetService("UserInputService")
-local VU  = game:GetService("VirtualUser")
-local Players = game:GetService("Players")
+type Player                 = Player
+type Character              = Model
+type Humanoid               = Humanoid
+type Tool                   = Tool
+type Camera                 = Camera
+type ModuleScript           = ModuleScript
+
+----------------------------------------------------------------------
+-- 2.  SINGLETON STATE CONTAINER (the ONLY global we expose)
+----------------------------------------------------------------------
+local Killer                = {}
+_G.Killer                   = Killer        -- safe, namespaced global
+
+----------------------------------------------------------------------
+-- 3.  CONFIG
+----------------------------------------------------------------------
+local CONFIG = {
+    KILL_COOLDOWN           = 0.05,
+    AUTO_KILL_ALL_RATE      = 0.2,
+    AUTO_KILL_TARGET_RATE   = 0.1,
+    CHARACTER_LOAD_TIMEOUT  = 5,
+}
+
+----------------------------------------------------------------------
+-- 4.  STATE
+----------------------------------------------------------------------
+Killer.Whitelisted          = {}            :: { string }
+Killer.Target               = ""            :: string            -- "Name (Display)"
+Killer.AutoKillAll          = false
+Killer.AutoKillTarget       = false
+Killer.AutoWhitelistFriends = false
+
+----------------------------------------------------------------------
+-- 5.  UTILITIES
+----------------------------------------------------------------------
 local LocalPlayer = Players.LocalPlayer
 
--- =============================================================================
--- 3.  Create ONE main window
--- =============================================================================
-local Window = Library:AddWindow("KYY  MEGA  HUB", {
-    main_color = Color3.fromRGB(255,0,0),
-    min_size   = Vector2.new(600, 400),
-    can_resize = true
-})
+-- wait for character with timeout
+local function waitForCharacter(who: Player): Character?
+    if who.Character and who.Character:FindFirstChild("HumanoidRootPart") then
+        return who.Character
+    end
+    local start = tick()
+    repeat task.wait(0.1) until (who.Character and who.Character:FindFirstChild("HumanoidRootPart"))
+        or tick() - start > CONFIG.CHARACTER_LOAD_TIMEOUT
+    return who.Character
+end
 
--- =============================================================================
--- 4.  Helper  functions  (used everywhere)
--- =============================================================================
-local function notify(title, text, dur)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = title, Text = text, Duration = dur or 3
+-- simple notification
+local function notify(title: string, text: string, dur: number?): ()
+    StarterGui:SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = dur or 3
     })
 end
 
-local function getTool(name)   -- equip if in backpack
-    local tool = LocalPlayer.Backpack:FindFirstChild(name)
-    if tool and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid:EquipTool(tool)
-    end
-    return tool
-end
+----------------------------------------------------------------------
+-- 6.  TOOL / KILL LOGIC
+----------------------------------------------------------------------
+local function equipPunch(): ()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local human: Humanoid? = char:FindFirstChildOfClass("Humanoid")
+    if not human then return end
 
-local function fireRep()
-    RS.muscleEvent:FireServer("rep")
-end
-
-local function punchBoth()
-    RS.muscleEvent:FireServer("punch","rightHand")
-    RS.muscleEvent:FireServer("punch","leftHand")
-end
-
--- =============================================================================
--- 5.  TAB  –  Main  (Anti-AFK + Auto Brawls + Anti-KB)
--- =============================================================================
-local mainTab = Window:AddTab("Main")
-
--- Anti-AFK
-local antiAFKEnabled = true
-local function setupAntiAFK()
-    LocalPlayer.Idled:Connect(function()
-        VU:CaptureController()
-        VU:ClickButton2(Vector2.new())
-    end)
-    notify("Anti-AFK","Enabled")
-end
-setupAntiAFK()
-
-mainTab:AddSwitch("Anti-AFK System", function(bool)
-    antiAFKEnabled = bool
-    if bool then setupAntiAFK() end
-end, true)
-
--- Auto Brawls folder
-local brawlF = mainTab:AddFolder("Auto Brawls")
-brawlF:AddSwitch("Auto Win Brawl", function(s)
-    getgenv().autoWinBrawl = s
-    while getgenv().autoWinBrawl do
-        if LocalPlayer.PlayerGui.gameGui.brawlJoinLabel.Visible then
-            RS.rEvents.brawlEvent:FireServer("joinBrawl")
-            LocalPlayer.PlayerGui.gameGui.brawlJoinLabel.Visible = false
+    for _, t in LocalPlayer.Backpack:GetChildren() do
+        if t.Name == "Punch" and t:IsA("Tool") then
+            human:EquipTool(t)
+            break
         end
-        task.wait(.5)
     end
-end)
 
--- Anti KB
-local akF = mainTab:AddFolder("Anti Knockback")
-akF:AddSwitch("Anti Knockback", function(v)
-    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    if v then
-        Instance.new("BodyVelocity", root).Velocity = Vector3.zero
-    else
-        local bv = root:FindFirstChild("BodyVelocity")
-        if bv then bv:Destroy() end
+    -- fire events
+    local muscle = LocalPlayer:FindFirstChild("muscleEvent")
+    if muscle then
+        muscle:FireServer("punch", "leftHand")
+        muscle:FireServer("punch", "rightHand")
     end
-end)
-
--- =============================================================================
--- 6.  TAB  –  Farm Rock  (merged rocks + gyms + tools)
--- =============================================================================
-local farmTab = Window:AddTab("Farm Rock")
-
--- 6a.  Auto Rock  (from sampol fast-glitch)
-local rockFolder = farmTab:AddFolder("Auto Rock")
-local rocks = {
-    {n="Tiny Island Rock",  d=0},
-    {n="Starter Island Rock",d=100},
-    {n="Legend Beach Rock",  d=5000},
-    {n="Frost Gym Rock",     d=150000},
-    {n="Mythical Gym Rock",  d=400000},
-    {n="Eternal Gym Rock",   d=750000},
-    {n="Legend Gym Rock",    d=1e6},
-    {n="Muscle King Gym Rock",d=5e6},
-    {n="Ancient Jungle Rock",d=10e6}
-}
-for _,r in ipairs(rocks) do
-    rockFolder:AddSwitch(r.n, function(s)
-        getgenv()[r.n] = s
-        while getgenv()[r.n] do
-            if LocalPlayer.Durability.Value >= r.d then
-                local rock = WS.machinesFolder:FindFirstChild(r.n)
-                if rock then
-                    firetouchinterest(rock.Rock, LocalPlayer.Character.RightHand,0)
-                    firetouchinterest(rock.Rock, LocalPlayer.Character.RightHand,1)
-                    firetouchinterest(rock.Rock, LocalPlayer.Character.LeftHand,0)
-                    firetouchinterest(rock.Rock, LocalPlayer.Character.LeftHand,1)
-                    getTool("Punch"); punchBoth()
-                end
-            end
-            task.wait(.05)
-        end
-    end)
 end
 
--- 6b.  Auto Gym  (from sampol)
-local gymFolder = farmTab:AddFolder("Auto Gym")
-local gyms = {"Jungle Bench","Jungle Bar Lift","Jungle Boulder","Jungle Squat"}
-for _,g in ipairs(gyms) do
-    gymFolder:AddSwitch("Auto "..g, function(s)
-        getgenv()[g] = s
-        while getgenv()[g] do
-            local m = WS.machinesFolder:FindFirstChild(g)
-            if m and m:FindFirstChild("interactSeat") then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = m.interactSeat.CFrame + Vector3.new(0,3,0)
-                RS.rEvents.machineInteractRemote:InvokeServer("useMachine",m)
-                fireRep()
-            end
-            task.wait(.1)
-        end
-    end)
-end
+local function killVictim(victim: Player): ()
+    local myChar = waitForCharacter(LocalPlayer)           :: Character?
+    local vicChar = waitForCharacter(victim)               :: Character?
+    if not myChar or not vicChar then return end
 
--- 6c.  Auto Equip Tools  (Weight / Pushups / Situps / Handstands)
-local toolFolder = farmTab:AddFolder("Auto Equip Tools")
-local tools = {"Weight","Pushups","Situps","Handstands"}
-for _,t in ipairs(tools) do
-    toolFolder:AddSwitch("Auto "..t, function(s)
-        getgenv()[t] = s
-        while getgenv()[t] do
-            getTool(t); fireRep()
-            task.wait(.5)
-        end
-    end)
-end
+    local root = vicChar:FindFirstChild("HumanoidRootPart"):: BasePart?
+    local left = myChar:FindFirstChild("LeftHand")         :: BasePart?
+    if not root or not left then return end
 
--- =============================================================================
--- 7.  TAB  –  Rebirths
--- =============================================================================
-local rebTab = Window:AddTab("Rebirths")
-local rebF = rebTab:AddFolder("Rebirth")
-local target = 0
-rebF:AddTextBox("Target Rebirth", function(txt)
-    target = tonumber(txt) or 0
-end)
-rebF:AddSwitch("Auto Rebirth Until Target", function(s)
-    getgenv().rebTar = s
-    while getgenv().rebTar do
-        if LocalPlayer.leaderstats.Rebirths.Value >= target then getgenv().rebTar=false notify("Target reached!") break end
-        RS.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-        task.wait(.1)
-    end
-end)
-rebF:AddSwitch("Auto Rebirth (Infinite)", function(s)
-    getgenv().infReb = s
-    while getgenv().infReb do
-        RS.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-        task wait(.1)
-    end
-end)
-
--- =============================================================================
--- 8.  TAB  –  Killer  (kill everyone / single / aura / whitelist)
--- =============================================================================
-local killTab = Window:AddTab("Killer")
-getgenv().whitelist = getgenv().whitelist or {}
-
-local function kill(plr)
-    if not plr or not plr.Character then return end
-    LocalPlayer.Character.HumanoidRootPart.CFrame = plr.Character.HumanoidRootPart.CFrame
-    punchBoth()
-end
-
-killTab:AddSwitch("Auto Kill Everyone (No Whitelist)", function(s)
-    getgenv().killAll = s
-    while getgenv().killAll do
-        for _,p in ipairs(Players:GetPlayers()) do
-            if p~=LocalPlayer and not table.find(getgenv().whitelist,p.Name) then
-                kill(p)
-            end
-        end
-        task wait(.1)
-    end
-end)
-
-killTab:AddTextBox("Whitelist Player", function(n)
-    if n~="" and not table.find(getgenv().whitelist,n) then table.insert(getgenv().whitelist,n) end
-end)
-killTab:AddButton("Clear Whitelist", function() getgenv().whitelist={} end)
-
--- Single target
-killTab:AddTextBox("Kill Single Player", function(n)
-    local t = Players:FindFirstChild(n)
-    if t then
-        spawn(function()
-            while t and t.Character do kill(t); task wait(.1) end
+    -- touch kill
+    task.spawn(function()
+        pcall(function()
+            firetouchinterest(root, left, 0)
+            task.wait(0.01)
+            firetouchinterest(root, left, 1)
+            equipPunch()
         end)
-    end
-end)
+    end)
+end
 
--- =============================================================================
--- 9.  TAB  –  Misc  (walkspeed / jumppower / noclip / etc.)
--- =============================================================================
-local miscTab = Window:AddTab("Misc")
-local miscF = miscTab:AddFolder("Character")
-miscF:AddTextBox("Walkspeed", function(v)
-    getgenv().ws = tonumber(v) or 16
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().ws
+----------------------------------------------------------------------
+-- 7.  PLAYER SEARCH
+----------------------------------------------------------------------
+local function findPlayer(input: string): Player?
+    if not input or input == "" then return nil end
+    input = input:lower()
+    local best: Player? = nil
+    local bestScore = 0
+
+    for _, p in Players:GetPlayers() do
+        if p == LocalPlayer then continue end
+        local u = p.Name:lower()
+        local d = p.DisplayName:lower()
+
+        local function score(str: string): number
+            local idx = str:find(input, 1, true)
+            if not idx then return 0 end
+            local s = (#input / #str) * 100
+            if idx == 1 then s += 50 end
+            return s
+        end
+
+        local s = math.max(score(u), score(d))
+        if s > bestScore then
+            bestScore = s
+            best = p
+        end
     end
-end)
-miscF:AddTextBox("JumpPower", function(v)
-    getgenv().jp = tonumber(v) or 50
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.JumpPower = getgenv().jp
-    end
-end)
-miscF:AddSwitch("Noclip", function(s)
-    getgenv().noclip = s
-    if s then
-        getgenv().nc = game:GetService("RunService").Stepped:Connect(function()
-            if LocalPlayer.Character then
-                for _,p in ipairs(LocalPlayer.Character:GetDescendants()) do
-                    if p:IsA("BasePart") then p.CanCollide = false end
-                end
+    return bestScore > 20 and best or nil
+end
+
+----------------------------------------------------------------------
+-- 8.  FRIEND WHITELIST
+----------------------------------------------------------------------
+local function refreshFriendWhitelist(): ()
+    if not Killer.AutoWhitelistFriends then return end
+    for _, p in Players:GetPlayers() do
+        if p == LocalPlayer then continue end
+        if p:IsFriendsWith(LocalPlayer.UserId) then
+            local id = p.Name .. " (" .. p.DisplayName .. ")"
+            if not table.find(Killer.Whitelisted, id) then
+                table.insert(Killer.Whitelisted, id)
             end
-        end)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(function(p: Player)
+    if Killer.AutoWhitelistFriends and p:IsFriendsWith(LocalPlayer.UserId) then
+        local id = p.Name .. " (" .. p.DisplayName .. ")"
+        if not table.find(Killer.Whitelisted, id) then
+            table.insert(Killer.Whitelisted, id)
+        end
+    end
+end)
+
+----------------------------------------------------------------------
+-- 9.  UI CONSTRUCTION (assumes your UI lib has :AddLabel, :AddSwitch, etc.)
+----------------------------------------------------------------------
+-- Replace these thin wrappers with your actual UI-lib calls.
+local UI do
+    local tab = {}     -- mock table that mimics your lib
+    function tab:AddLabel(text: string)
+        return { Text = text }   -- return object so we can edit .Text later
+    end
+    function tab:AddSwitch(text: string, fn: (boolean)->())
+        -- create real switch here
+    end
+    function tab:AddTextBox(placeholder: string, fn: (string)->())
+        -- create real box here
+    end
+    function tab:AddButton(text: string, fn: ()->())
+        -- create real button here
+    end
+    function tab:AddDropdown(name: string, fn: (string)->())
+        -- create real dropdown here
+        return { Clear = function() end, Add = function() end }
+    end
+    UI = tab
+end
+
+local wlLabel   = UI:AddLabel("Whitelisted Players: None")
+local tgtLabel  = UI:AddLabel("Target Player: None")
+
+local function updateWL()
+    if #Killer.Whitelisted == 0 then
+        wlLabel.Text = "Whitelisted Players: None"
     else
-        if getgenv().nc then getgenv().nc:Disconnect() end
+        wlLabel.Text = "Whitelisted: " .. table.concat(Killer.Whitelisted, ", ")
     end
-end)
-miscF:AddButton("Anti-AFK", function()
-    VU:CaptureController()
-    LocalPlayer.Idled:Connect(function() VU:ClickButton2(Vector2.new()) end)
-    notify("Anti-AFK","Enabled")
-end)
+end
 
--- =============================================================================
--- 10.  TAB  –  Stats  (simple real-time labels)
--- =============================================================================
-local statsTab = Window:AddTab("Stats")
-local statsF = statsTab:AddFolder("Real Time")
-local ls = LocalPlayer:WaitForChild("leaderstats")
-local labels = {
-    kills  = statsF:AddLabel("Kills: 0"),
-    str    = statsF:AddLabel("Strength: 0"),
-    reb    = statsF:AddLabel("Rebirths: 0"),
-    dur    = statsF:AddLabel("Durability: 0")
-}
-spawn(function()
-    while true do
-        labels.kills.Text = "Kills: "..(ls.Kills.Value or 0)
-        labels.str.Text   = "Strength: "..math.floor(ls.Strength.Value or 0)
-        labels.reb.Text   = "Rebirths: "..(ls.Rebirths.Value or 0)
-        labels.dur.Text   = "Durability: "..(LocalPlayer.Durability.Value or 0)
-        task wait(1)
+local function updateTgt()
+    tgtLabel.Text = Killer.Target == "" and "Target Player: None"
+                                         or  "Target Player: " .. Killer.Target
+end
+
+----------------------------------------------------------------------
+-- 10.  AUTO-KILL LOOPS
+----------------------------------------------------------------------
+-- Kill-all loop
+RunService.Heartbeat:Connect(function()
+    if not Killer.AutoKillAll then return end
+    for _, p in Players:GetPlayers() do
+        if p == LocalPlayer then continue end
+        -- check whitelist
+        local safe = false
+        for _, id in Killer.Whitelisted do
+            if id:find(p.Name, 1, true) then safe = true; break end
+        end
+        if safe then continue end
+        -- kill
+        killVictim(p)
+        task.wait(CONFIG.KILL_COOLDOWN)
     end
+    task.wait(CONFIG.AUTO_KILL_ALL_RATE)
 end)
 
--- =============================================================================
--- 11.  TAB  –  Credits
--- =============================================================================
-local credTab = Window:AddTab("Credits")
-credTab:AddLabel("KYY PIE – Combined Mega Hub")
-credTab:AddLabel("Discord:  markyy11")
-credTab:AddButton("Copy Discord Invite", function()
-    setclipboard("https://discord.gg/CCUdkJWP")
-    notify("Copied","Discord invite link saved to clipboard")
+-- Kill-target loop
+RunService.Heartbeat:Connect(function()
+    if not Killer.AutoKillTarget or Killer.Target == "" then return end
+    local name = Killer.Target:match("^([^%(]+)"):: string?
+    if not name then return end
+    name = name:gsub("%s+$", "")
+    local p = Players:FindFirstChild(name)
+    if p then killVictim(p) end
+    task.wait(CONFIG.AUTO_KILL_TARGET_RATE)
 end)
 
--- =============================================================================
--- 12.  Auto-equip Punch on spawn  (quality-of-life)
--- =============================================================================
-LocalPlayer.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid")
-    task.wait(.5)
-    getTool("Punch")
-    if getgenv().ws then char.Humanoid.WalkSpeed = getgenv().ws end
-    if getgenv().jp then char.Humanoid.JumpPower = getgenv().jp end
+----------------------------------------------------------------------
+-- 11.  SPECTATE
+----------------------------------------------------------------------
+local function spectate()
+    if Killer.Target == "" then return end
+    local name = Killer.Target:match("^([%w_]+)"):: string?
+    local p = name and Players:FindFirstChild(name)
+    local hum = p and p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+    if hum then workspace.CurrentCamera.CameraSubject = hum end
+end
+
+local function unspectate()
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum then workspace.CurrentCamera.CameraSubject = hum end
+end
+
+----------------------------------------------------------------------
+-- 12.  FINAL UI WIRING
+----------------------------------------------------------------------
+UI:AddSwitch("Auto-whitelist friends", function(on: boolean)
+    Killer.AutoWhitelistFriends = on
+    if on then refreshFriendWhitelist(); updateWL() end
 end)
 
-notify("KYY MEGA HUB","All features loaded – enjoy!")
+UI:AddTextBox("Add to whitelist (name)", function(txt: string)
+    local p = findPlayer(txt)
+    if not p then notify("Not found", "No player matches '" .. txt .. "'") return end
+    local id = p.Name .. " (" .. p.DisplayName .. ")"
+    if table.find(Killer.Whitelisted, id) then notify("Already whitelisted", "") return end
+    table.insert(Killer.Whitelisted, id)
+    updateWL()
+end)
+
+UI:AddTextBox("Remove from whitelist", function(txt: string)
+    txt = txt:lower()
+    for i, v in Killer.Whitelisted do
+        if v:lower():find(txt, 1, true) then
+            table.remove(Killer.Whitelisted, i)
+            updateWL()
+            notify("Removed", v)
+            return
+        end
+    end
+    notify("Not found", "No matching whitelist entry")
+end)
+
+UI:AddButton("Clear whitelist", function()
+    Killer.Whitelisted = {}
+    updateWL()
+end)
+
+UI:AddSwitch("Auto-kill everyone (except whitelist)", function(on: boolean)
+    Killer.AutoKillAll = on
+end)
+
+UI:AddSwitch("Auto-kill target", function(on: boolean)
+    Killer.AutoKillTarget = on
+end)
+
+UI:AddButton("View target", spectate)
+UI:AddButton("Stop spectating", unspectate)
+
+-- dropdown population (stub – wire to your real dropdown)
+local function rebuildDropdown()
+    -- collect choices
+    local choices = {}
+    local map = {}
+    for _, p in Players:GetPlayers() do
+        if p == LocalPlayer then continue end
+        local show = (p.DisplayName ~= p.Name)
+                and ("%s  (@%s)"):format(p.DisplayName, p.Name)
+                or  p.Name
+        table.insert(choices, show)
+        map[show] = p
+    end
+    -- update your dropdown here
+    -- dropdown:Clear(); for _, c in choices do dropdown:Add(c) end
+end
+Players.PlayerAdded:Connect(rebuildDropdown)
+Players.PlayerRemoving:Connect(rebuildDropdown)
+rebuildDropdown()
+
+notify("Killer loaded", "UI ready – have fun!")
