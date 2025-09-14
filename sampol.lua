@@ -11,6 +11,12 @@ type Tool                   = Tool
 type Camera                 = Camera
 type ModuleScript           = ModuleScript
 
+local window = library:AddWindow("KYY PIE", {
+    main_color = Color3.fromRGB(0, 0, 0),
+    min_size = Vector2.new(300, 400),
+    can_resize = true,
+})
+
 ----------------------------------------------------------------------
 -- 2.  SINGLETON STATE CONTAINER (the ONLY global we expose)
 ----------------------------------------------------------------------
