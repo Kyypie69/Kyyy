@@ -2213,8 +2213,74 @@ statsFolder:AddButton("Copy Statistics", function()
         statsText = statsText .. "Brawls Gained: " .. formatNumberWithCommas(brawlsGain) .. "\n"
     end
 
-local KillerV2Tab = Window:AddTab("Killer V2")
-KillingV2Tab:AddSwitch("Auto Punch", function(state)
+-- ===== AUTO-RESTART VIEW & KILL TARGET =======================================
+local viewing = false
+local viewLoop = nil
+
+local function unspectate()
+    local me = game.Players.LocalPlayer
+    if me.Character and me.Character:FindFirstChildOfClass("Humanoid") then
+        workspace.CurrentCamera.CameraSubject = me.Character:FindFirstChildOfClass("Humanoid")
+    end
+end
+
+local function startViewAndKill()
+    if not _G.targetPlayer or _G.targetPlayer == "" then return end
+
+    viewing = true
+
+    viewLoop = spawn(function()
+        while viewing do
+            local name = _G.targetPlayer:match("^([%w_]+)")
+            local tgt = game.Players:FindFirstChild(name)
+
+            -- Wait until target is in-game and has a character
+            while viewing and (not tgt or not tgt.Character or not tgt.Character:FindFirstChildOfClass("Humanoid")) do
+                task.wait(0.5)
+                tgt = game.Players:FindFirstChild(name)
+            end
+            if not viewing then break end
+
+            -- Lock camera
+            workspace.CurrentCamera.CameraSubject = tgt.Character:FindFirstChildOfClass("Humanoid")
+
+            -- Kill loop while target is alive
+            while viewing and tgt and tgt.Character and tgt.Character:FindFirstChild("HumanoidRootPart") and tgt.Character.Humanoid.Health > 0 do
+                pcall(function()
+                    killPlayer(tgt)
+                end)
+                task.wait(0.1)
+            end
+
+            -- Target died or left; wait for respawn
+            if viewing then
+                unspectate()
+                task.wait(1) -- brief pause before restart
+            end
+        end
+
+        -- Final cleanup
+        unspectate()
+    end)
+end
+
+killerTab:AddButton("View & Kill Target (Auto-Restart)", function()
+    if not viewing then
+        startViewAndKill()
+    end
+end)
+
+killerTab:AddButton("Stop Viewing & Killing", function()
+    viewing = false
+    if viewLoop then
+        -- no way to truly kill a spawn, so we just flag it
+        viewLoop = nil
+    end
+    unspectate()
+end)
+
+local killerV2Tab = window:AddTab("Killer V2")
+killerV2Tab:AddSwitch("Auto Punch", function(state)
     getgenv().autopunch = state
     task.spawn(function()
         while getgenv().autopunch and LocalPlayer.Character do
@@ -2233,7 +2299,7 @@ KillingV2Tab:AddSwitch("Auto Punch", function(state)
         end
     end)
 end)
-KillingV2Tab:AddSwitch("Fast Punch", function(state)
+killerV2Tab:AddSwitch("Fast Punch", function(state)
     getgenv().fastPunch = state
     task.spawn(function()
         while getgenv().fastPunch and LocalPlayer.Character do
@@ -2252,7 +2318,7 @@ KillingV2Tab:AddSwitch("Fast Punch", function(state)
         end
     end)
 end)
-KillingV2Tab:AddSwitch("Auto Kill Everyone", function(state)
+killerV2Tab:AddSwitch("Auto Kill Everyone", function(state)
     getgenv().autoKillActive = state
     task.spawn(function()
         while getgenv().autoKillActive and LocalPlayer.Character do
@@ -2271,11 +2337,11 @@ KillingV2Tab:AddSwitch("Auto Kill Everyone", function(state)
         end
     end)
 end)
-KillingV2Tab:AddDropdown("Select Kill Method", {"Teleport", "Non-Teleport"}, function(method)
+killerV2Tab:AddDropdown("Select Kill Method", {"Teleport", "Non-Teleport"}, function(method)
     getgenv().killMethod = method
     print("Kill Method set to: " .. method)
 end)
-KillingV2Tab:AddDropdown("Whitelist Players", function()
+killerV2Tab:AddDropdown("Whitelist Players", function()
     local playerNames = {LocalPlayer.Name}
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -2306,7 +2372,7 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 Players.PlayerRemoving:Connect(function() end)
-KillingV2Tab:AddSwitch("Fast Kill Aura", function(state)
+killerV2Tab:AddSwitch("Fast Kill Aura", function(state)
     getgenv().fastKillAura = state
     task.spawn(function()
         while getgenv().fastKillAura and LocalPlayer.Character do
@@ -2323,11 +2389,11 @@ KillingV2Tab:AddSwitch("Fast Kill Aura", function(state)
         end
     end)
 end)
-KillingV2Tab:AddLabel("---Single Kill---")
-KillingV2Tab:AddTextBox("Player Username", function(name)
+killerV2Tab:AddLabel("---Single Kill---")
+killerV2Tab:AddTextBox("Player Username", function(name)
     getgenv().targetPlayerName = name
 end)
-KillingV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
+killerV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
     getgenv().autoFastKillPlayer = state
     task.spawn(function()
         while getgenv().autoFastKillPlayer and LocalPlayer.Character and getgenv().targetPlayerName do
@@ -2343,7 +2409,7 @@ KillingV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
         end
     end)
 end)
-KillingV2Tab:AddSwitch("Spy Player", function(state)
+killerV2Tab:AddSwitch("Spy Player", function(state)
     getgenv().spyPlayer = state
     task.spawn(function()
         while getgenv().spyPlayer and getgenv().targetPlayerName do
