@@ -33,7 +33,7 @@ setupAntiAFK()
 -- Create Main Window
 local window = library:AddWindow("KYY PIE", {
     main_color = Color3.fromRGB(0, 0, 0),
-    min_size = Vector2.new(400, 382),
+    min_size = Vector2.new(500, 500),
     can_resize = true,
 })
 
