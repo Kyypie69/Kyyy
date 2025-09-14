@@ -27,7 +27,8 @@ mainTab:AddSwitch("Auto Eat Protein Egg Every 30 Minutes", function(state)
             task.wait(1800)
         end
     end)
-end)
+end
+
 mainTab:AddSwitch("Auto Eat Protein Egg Every 1 hour", function(state)
     getgenv().autoEatProteinEggHourly = state
     task.spawn(function()
@@ -40,8 +41,10 @@ mainTab:AddSwitch("Auto Eat Protein Egg Every 1 hour", function(state)
             task.wait(3600)
         end
     end)
-end)
-local MiscFolder = MainTab:AddFolder("Misc")
+end
+
+local miscTab = windowAddTab("Misc")
+local MiscFolder = miscTab:AddFolder("Misc")
 MiscFolder:AddSwitch("Auto Farm (Equip Any tool)", function(state)
     getgenv().autoFarm = state
     task.spawn(function()
@@ -56,7 +59,8 @@ MiscFolder:AddSwitch("Auto Farm (Equip Any tool)", function(state)
             task.wait()
         end
     end)
-end)
+end
+
 MiscFolder:AddLabel("---Script Hub---")
 MiscFolder:AddButton("Permanent ShiftLock", function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/MiniNoobie/ShiftLockx/main/Shiftlock-MiniNoobie"))()
