@@ -1302,58 +1302,58 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 	end
 })
 --------------------------------------------------------------------
--- DESERT-SUNSET  (drop-in replacement)
+-- 3-D SUNRISE  (replace old block with this)
 --------------------------------------------------------------------
 local lighting = game.Lighting
 lighting:ClearAllChildren()
 
 -- 1. BASE LIGHTING
-lighting.Ambient = Color3.fromRGB(120, 70, 35)         -- hot sand bounce
-lighting.Brightness = 0.38
-lighting.ColorShift_Bottom = Color3.fromRGB(140, 80, 30)
-lighting.ColorShift_Top = Color3.fromRGB(255, 180, 70) -- bleached horizon
-lighting.OutdoorAmbient = Color3.fromRGB(90, 55, 35)
-lighting.ShadowSoftness = 0.7                          -- long, soft dunes
+lighting.Ambient = Color3.fromRGB(45, 50, 70)          -- cool dawn bounce
+lighting.Brightness = 0.55
+lighting.ColorShift_Bottom = Color3.fromRGB(30, 40, 60)
+lighting.ColorShift_Top = Color3.fromRGB(255, 130, 100)-- horizon peach
+lighting.OutdoorAmbient = Color3.fromRGB(40, 45, 65)
+lighting.ShadowSoftness = 0.6                          -- long soft shadows
 lighting.GlobalShadows = true
-lighting.GeographicLatitude = 80                       -- sun kissing edge
-lighting.ExposureCompensation = -0.35                  -- stop-down for heat
+lighting.GeographicLatitude = -80                      -- sun at sunrise edge
+lighting.ExposureCompensation = -0.2
 
 -- 2. TIME & SKY
-lighting.ClockTime = 18.55                             -- 6:33 pm
-lighting.TimeOfDay = "18:33:00"
+lighting.ClockTime = 6.15                              -- 6:09 am
+lighting.TimeOfDay = "06:09:00"
 
 local sky = Instance.new("Sky", lighting)
--- desert sunset cubemap (royalty-free, already on Roblox)
-sky.SkyboxBk = "rbxassetid://6176804950"
-sky.SkyboxDn = "rbxassetid://6176805118"
-sky.SkyboxFt = "rbxassetid://6176805213"
-sky.SkyboxLf = "rbxassetid://6176805288"
-sky.SkyboxRt = "rbxassetid://6176805385"
-sky.SkyboxUp = "rbxassetid://6176805509"
-sky.SunAngularSize = 24                                -- swollen sun
+-- calm sunrise cubemap (already on Roblox)
+sky.SkyboxBk = "rbxassetid://6176804012"
+sky.SkyboxDn = "rbxassetid://6176804156"
+sky.SkyboxFt = "rbxassetid://6176804255"
+sky.SkyboxLf = "rbxassetid://6176804340"
+sky.SkyboxRt = "rbxassetid://6176804437"
+sky.SkyboxUp = "rbxassetid://6176804544"
+sky.SunAngularSize = 18                                -- crisp morning disc
 
--- 3. POST & HEAT
+-- 3. POST & MIST
 local bloom = Instance.new("BloomEffect", lighting)
-bloom.Intensity = 0.48
-bloom.Size = 64
-bloom.Threshold = 0.5
+bloom.Intensity = 0.25
+bloom.Size = 48
+bloom.Threshold = 0.65
 
 local cc = Instance.new("ColorCorrectionEffect", lighting)
-cc.Brightness = 0.06
-cc.Contrast = 0.18
-cc.Saturation = -0.1                                   -- slightly desaturated
-cc.TintColor = Color3.fromRGB(255, 155, 60)            -- dusty orange wash
+cc.Brightness = 0.08
+cc.Contrast = 0.15
+cc.Saturation = 0.12
+cc.TintColor = Color3.fromRGB(255, 180, 140)           -- gentle peach tint
 
-local blur = Instance.new("BlurEffect", lighting)        -- heat shimmer
-blur.Size = 5
+local blur = Instance.new("BlurEffect", lighting)        -- morning mist
+blur.Size = 4
 
 local atmos = Instance.new("Atmosphere", lighting)
-atmos.Density = 0.42
+atmos.Density = 0.28
 atmos.Offset = 0
-atmos.Color = Color3.fromRGB(255, 170, 80)             -- sand in air
-atmos.Decay = Color3.fromRGB(70, 50, 80)               -- cool purple aloft
-atmos.Glare = 0.9
-atmos.Haze = 1.1                                       -- thick distant haze
+atmos.Color = Color3.fromRGB(255, 180, 140)            -- low sun scatter
+atmos.Decay = Color3.fromRGB(50, 60, 100)              -- cool purple aloft
+atmos.Glare = 0.5
+atmos.Haze = 2.2                                       -- thick ground mist
 
 
 Tabs.Settings:CreateButton{
