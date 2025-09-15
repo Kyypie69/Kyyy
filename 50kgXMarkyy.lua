@@ -1303,32 +1303,56 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 local a = game.Lighting
-a.Ambient = Color3.fromRGB(33, 33, 33)
+
+----------------------------------------------------
+-- 4-D helper: 4-key ColorSequence, all keys = rgb
+----------------------------------------------------
+local function seq4(rgb)
+    local c = Color3.new(rgb.r/255, rgb.g/255, rgb.b/255)
+    return ColorSequence.new{
+        ColorSequenceKeypoint.new(0,    c),
+        ColorSequenceKeypoint.new(0.33, c),
+        ColorSequenceKeypoint.new(0.66, c),
+        ColorSequenceKeypoint.new(1,    c)
+    }
+end
+
+----------------------------------------------------
+-- Lighting service
+----------------------------------------------------
+a.Ambient = seq4(Color3.new(33, 33, 33))
+a.OutdoorAmbient = seq4(Color3.new(51, 54, 67))
+a.ColorShift_Bottom = seq4(Color3.new(0, 0, 0))
+a.ColorShift_Top = seq4(Color3.new(255, 247, 237))
+
 a.Brightness = 1
-a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
-a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
 a.EnvironmentDiffuseScale = 0.105
 a.EnvironmentSpecularScale = 0.522
 a.GlobalShadows = true
-a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
 a.ShadowSoftness = 0.04
 a.GeographicLatitude = -15.525
 a.ExposureCompensation = 0.75
 
+----------------------------------------------------
+-- Bloom (4-D intensity via ColorSequence)
+----------------------------------------------------
 local b = Instance.new("BloomEffect")
 b.Parent = a
 b.Enabled = true
-b.Intensity = 0.04
+b.Intensity = seq4(Color3.new(0.04*255, 0.04*255, 0.04*255))
 b.Size = 1900
 b.Threshold = 0.915
 
+----------------------------------------------------
+-- ColorCorrection (4-D Brightness/Contrast/Saturation/Tint)
+----------------------------------------------------
 local c = Instance.new("ColorCorrectionEffect")
 c.Parent = a
-c.Brightness = 0.176
-c.Contrast = 0.39
 c.Enabled = true
-c.Saturation = 0.2
-c.TintColor = Color3.fromRGB(217, 145, 57)
+c.Brightness = seq4(Color3.new(0.176*255, 0.176*255, 0.176*255))
+c.Contrast = seq4(Color3.new(0.39*255, 0.39*255, 0.39*255))
+c.Saturation = seq4(Color3.new(0.2*255, 0.2*255, 0.2*255))
+c.TintColor = seq4(Color3.new(217, 145, 57))
 
 
 Tabs.Settings:CreateButton{
