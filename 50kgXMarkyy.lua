@@ -46,7 +46,7 @@ local Window = Library:CreateWindow{
 	},
 	SkyChanger = Window:CreateTab{
 		Title = "Sky Changer",
-		Icon = "phosphor-mountain-bold"
+		Icon = "mountain"
 	}
 }
 
@@ -1291,16 +1291,20 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 	Description = "Change Day",
 	Values = {
 		"Morning",
+		"Day",
 		"Afternoon",
-		"Night"
+		"Night",
+		"Reset"
 	},
 	Multi = false,
 	Default = "Default",
 	Callback = function(Value)
 		local times = {
 			["Morning"] = 2.9,
+			["Day"] = 12.9,
 			["Afternoon"] = 17.9,
-			["Night"] = 0
+			["Night"] = 0,
+			["Reset"] = 24
 		}
 		game:GetService("Lighting").ClockTime = times[Value]
 	end
@@ -1351,7 +1355,7 @@ pulse.Name = "Pulse"
 pulse.Enabled = true
 pulse.Size  = 3200
 game:GetService("RunService").Heartbeat:Connect(function(t)
-    pulse.Intensity = 0.65 + 0.08 * math.sin(t * 1.6)
+    pulse.Intensity = 0.15 + 0.04 * math.sin(t * 1.6)
 end)
 
 Tabs.Settings:CreateButton{
@@ -1371,7 +1375,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = false
+  sky.CelestialBodiesShown = true
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1454,7 +1458,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = false
+  sky.CelestialBodiesShown = true
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1474,7 +1478,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = false
+  sky.CelestialBodiesShown = true
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1496,7 +1500,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = false
+  sky.CelestialBodiesShown = true
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1508,7 +1512,7 @@ Tabs.SkyChanger:AddButton({
  
  
   Tabs.SkyChanger:AddButton({
-    Title = "Aurora Boreal",
+    Title = "Aurora Borealis",
     Callback = function()
         getgenv().Kitten = 5
   local texture = "http://www.roblox.com/asset/?id=17108721907"
@@ -1516,7 +1520,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = false
+  sky.CelestialBodiesShown = true
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1528,27 +1532,7 @@ Tabs.SkyChanger:AddButton({
  
  
  
-  Tabs.SkyChanger:AddButton({
-    Title = "Red Vulkan",
-    Callback = function()
-        getgenv().Kitten = 5
-  local texture = "http://www.roblox.com/asset/?id=17108721907"
-  local sky = Instance.new("Sky")
- 
-  sky.Parent = game.Lighting
- 
-  sky.CelestialBodiesShown = false
-  sky.SkyboxBk = texture
-  sky.SkyboxDn = texture
-  sky.SkyboxFt = texture
-  sky.SkyboxLf = texture
-  sky.SkyboxRt = texture
-  sky.SkyboxUp = texture
-    end
-  })
- 
- 
- 
+  
   Tabs.SkyChanger:AddButton({
     Title = "Sakura Pink Sky",
     Callback = function()
@@ -1668,14 +1652,14 @@ Tabs.SkyChanger:AddButton({
   topkek.Size = 10
   local bloom = Instance.new('BloomEffect', game.Lighting)
   bloom.Intensity = 0.4
-  bloom.Size = 86
+  bloom.Size = 36
   bloom.Threshold = 1
  
            game.Lighting.TimeOfDay=0;
             game.Lighting.Brightness=0;
             game.Lighting.ShadowColor=Color3.new(0,0,0);
             game.Lighting.Ambient=Color3.new(1,0,0);
-            game.Lighting.FogEnd=300;
+            game.Lighting.FogEnd=500;
             game.Lighting.FogColor=Color3.new(1,0,0);
       end    
   })
