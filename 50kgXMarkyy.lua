@@ -1303,30 +1303,30 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 local a = game.Lighting
-a.Ambient = Color3.fromRGB(120, 75, 60)        -- warm low-fill
-a.Brightness = 0.75                            -- drop overall intensity
-a.ColorShift_Bottom = Color3.fromRGB(80, 45, 30)
-a.ColorShift_Top = Color3.fromRGB(255, 160, 100)  -- orange horizon
-a.EnvironmentDiffuseScale = 0.25               -- slightly stronger diffuse
-a.EnvironmentSpecularScale = 0.4               -- softer spec
+a.Ambient = Color3.fromRGB(160, 175, 190)      -- frosty blue-grey
+a.Brightness = 0.85                            -- weak winter sun
+a.ColorShift_Bottom = Color3.fromRGB(140, 155, 170)
+a.ColorShift_Top = Color3.fromRGB(220, 230, 240) -- pale icy sky
+a.EnvironmentDiffuseScale = 0.2                -- soft snow bounce
+a.EnvironmentSpecularScale = 0.7               -- bright snow glint
 a.GlobalShadows = true
-a.OutdoorAmbient = Color3.fromRGB(140, 90, 70)
-a.ShadowSoftness = 0.25                        -- longer, softer shadows
-a.GeographicLatitude = 25                      -- sun near horizon
-a.ExposureCompensation = -0.35                 -- slight under-exposure
+a.OutdoorAmbient = Color3.fromRGB(170, 185, 200)
+a.ShadowSoftness = 0.1                         -- crisp, cold shadows
+a.GeographicLatitude = 60                      -- very low sun angle
+a.ExposureCompensation = -0.25                 -- slight under-exposure
 
 local b = Instance.new("BloomEffect", a)
 b.Enabled = true
-b.Intensity = 0.35                             -- stronger bloom
-b.Size = 2400
-b.Threshold = 0.55                             -- more glow on brights
+b.Intensity = 0.18                             -- subtle snow sparkle
+b.Size = 1800
+b.Threshold = 0.75
 
 local c = Instance.new("ColorCorrectionEffect", a)
-c.Brightness = 0.05
-c.Contrast = 0.15
+c.Brightness = 0.06
+c.Contrast = 0.2
 c.Enabled = true
-c.Saturation = 0.1                             -- gentle warmth boost
-c.TintColor = Color3.fromRGB(255, 180, 120)    -- golden tint
+c.Saturation = -0.25                           -- bleach for cold feel
+c.TintColor = Color3.fromRGB(200, 220, 255)    -- icy blue tint
 
 
 Tabs.Settings:CreateButton{
