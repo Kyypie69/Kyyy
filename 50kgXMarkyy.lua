@@ -1377,12 +1377,12 @@ Tabs.SkyChanger:AddButton({
   sky.Parent = game.Lighting
  
   sky.CelestialBodiesShown = false
-  sky.SkyboxBk = texture
-  sky.SkyboxDn = texture
-  sky.SkyboxFt = texture
-  sky.SkyboxLf = texture
-  sky.SkyboxRt = texture
-  sky.SkyboxUp = texture
+  sky.SkyboxBk = acrylic
+  sky.SkyboxDn = acrylic
+  sky.SkyboxFt = acrylic
+  sky.SkyboxLf = acrylic
+  sky.SkyboxRt = acrylic
+  sky.SkyboxUp = acrylic
     end
   })
  
@@ -1645,7 +1645,7 @@ Tabs.SkyChanger:AddButton({
  
   end
   local rekt = Instance.new('ColorCorrectionEffect', game.Lighting)
-  rekt.TintColor = Color3.new(155, 1, 0)
+  rekt.TintColor = Color3.new(125, 1, 0)
   rekt.Brightness = 0.2
   rekt.Contrast = 1
   rekt.Saturation = 1
@@ -1653,14 +1653,14 @@ Tabs.SkyChanger:AddButton({
   topkek.Size = 10
   local bloom = Instance.new('BloomEffect', game.Lighting)
   bloom.Intensity = 0.4
-  bloom.Size = 36
+  bloom.Size = 16
   bloom.Threshold = 1
  
            game.Lighting.TimeOfDay=0;
             game.Lighting.Brightness=0;
             game.Lighting.ShadowColor=Color3.new(0,0,0);
             game.Lighting.Ambient=Color3.new(1,0,0);
-            game.Lighting.FogEnd=500;
+            game.Lighting.FogEnd=100;
             game.Lighting.FogColor=Color3.new(1,0,0);
       end    
   })
