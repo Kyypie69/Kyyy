@@ -1303,56 +1303,32 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 local a = game.Lighting
-
---------------------------------------------------
--- 3-D AMBIENT / OUTDOOR AMBIENT / COLOR-SHIFT
---------------------------------------------------
--- Build a 3-key ColorSequence that stays flat at the old RGB value
-local function flatSequence(rgb)
-    local c = Color3.fromRGB(rgb.r, rgb.g, rgb.b)
-    return ColorSequence.new{
-        ColorSequenceKeypoint.new(0, c),
-        ColorSequenceKeypoint.new(0.5, c),
-        ColorSequenceKeypoint.new(1, c)
-    }
-end
-
-a.Ambient = Vector3.new(33/255, 33/255, 33/255)
-a.OutdoorAmbient = Vector3.new(51/255, 54/255, 67/255)
-a.ColorShift_Bottom = Vector3.new(0, 0, 0)
-a.ColorShift_Top = Vector3.new(255/255, 247/255, 237/255)
-
---------------------------------------------------
--- 3-D BLOOM
---------------------------------------------------
-local b = Instance.new("BloomEffect")
-b.Parent = a
-b.Enabled = true
-b.Intensity = Vector3.new(0.04, 0.04, 0.04)   -- r,g,b intensity
-b.Size = 1900
-b.Threshold = 0.915
-
---------------------------------------------------
--- 3-D COLOR-CORRECTION
---------------------------------------------------
-local c = Instance.new("ColorCorrectionEffect")
-c.Parent = a
-c.Enabled = true
-c.Brightness = Vector3.new(0.176, 0.176, 0.176)
-c.Contrast = Vector3.new(0.39, 0.39, 0.39)
-c.Saturation = Vector3.new(0.2, 0.2, 0.2)
-c.TintColor = flatSequence(Color3.fromRGB(217, 145, 57))
-
---------------------------------------------------
--- EVERYTHING ELSE (already scalar)
---------------------------------------------------
+a.Ambient = Color3.fromRGB(33, 33, 33)
 a.Brightness = 1
+a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
 a.EnvironmentDiffuseScale = 0.105
 a.EnvironmentSpecularScale = 0.522
 a.GlobalShadows = true
+a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
 a.ShadowSoftness = 0.04
 a.GeographicLatitude = -15.525
 a.ExposureCompensation = 0.75
+
+local b = Instance.new("BloomEffect")
+b.Parent = a
+b.Enabled = true
+b.Intensity = 0.04
+b.Size = 1900
+b.Threshold = 0.915
+
+local c = Instance.new("ColorCorrectionEffect")
+c.Parent = a
+c.Brightness = 0.176
+c.Contrast = 0.39
+c.Enabled = true
+c.Saturation = 0.2
+c.TintColor = Color3.fromRGB(217, 145, 57)
 
 
 Tabs.Settings:CreateButton{
