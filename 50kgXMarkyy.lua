@@ -1301,53 +1301,56 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 		game:GetService("Lighting").ClockTime = times[Value]
 	end
 })
---------------------------------------------------------------------
--- SUNSET LIGHTING
---------------------------------------------------------------------
-local a = game.Lighting("Lighting")
 
--- time-of-day → sunset
-a.ClockTime = 18.35          -- 6:20 pm
-a.GeographicLatitude = -2    -- sun almost on horizon
+local lighting = game.Lighting
+lighting:ClearAllChildren()        -- remove old bloom / color-correction
 
--- ambient colours (warm)
-a.Ambient = Color3.fromRGB(110, 75, 60)
-a.OutdoorAmbient = Color3.fromRGB(180, 110, 80)
+-- 1. BASE LIGHTING
+lighting.Ambient = Color3.fromRGB(90, 55, 40)          -- warm ground bounce
+lighting.Brightness = 0.45                             -- dimmer overall
+lighting.ColorShift_Bottom = Color3.fromRGB(120, 60, 30)
+lighting.ColorShift_Top = Color3.fromRGB(255, 140, 80) -- horizon orange
+lighting.OutdoorAmbient = Color3.fromRGB(70, 45, 50)
+lighting.ShadowSoftness = 0.55                         -- long soft shadows
+lighting.GlobalShadows = true
+lighting.GeographicLatitude = 75                       -- sun on horizon
+lighting.ExposureCompensation = -0.25                  -- slight under-expose
 
--- sun / sky
-a.Brightness = 1.6
-a.ColorShift_Top = Color3.fromRGB(255, 180, 110)   -- warm sky tint
-a.ColorShift_Bottom = Color3.fromRGB(90, 50, 40)   -- ground bounce
-a.GlobalShadows = true
-a.ShadowSoftness = 0.08
+-- 2. SKY & ATMOSPHERE
+lighting.ClockTime = 18.4                              -- 6:24 pm
+lighting.TimeOfDay = "18:24:00"
 
--- exposure
-a.ExposureCompensation = 0.45
+local sky = Instance.new("Sky", lighting)
+sky.SkyboxBk = "rbxassetid://153869253"   -- Roblox sunset textures
+sky.SkyboxDn = "rbxassetid://153869243"
+sky.SkyboxFt = "rbxassetid://153869260"
+sky.SkyboxLf = "rbxassetid://153869259"
+sky.SkyboxRt = "rbxassetid://153869257"
+sky.SkyboxUp = "rbxassetid://153869251"
+sky.SunAngularSize = 21                                -- bigger sun disc
 
--- leave future lighting scales neutral
-a.EnvironmentDiffuseScale = 0
-a.EnvironmentSpecularScale = 0
-
---------------------------------------------------------------------
--- BLOOM (gentle glow around bright spots)
---------------------------------------------------------------------
-local bloom = Instance.new("BloomEffect")
-bloom.Parent = l
-bloom.Enabled = true
+-- 3. POST-PROCESS
+local bloom = Instance.new("BloomEffect", lighting)
 bloom.Intensity = 0.35
-bloom.Size = 24
-bloom.Threshold = 0.77
+bloom.Size = 56
+bloom.Threshold = 0.6
 
---------------------------------------------------------------------
--- COLOR CORRECTION (overall orange wash)
---------------------------------------------------------------------
-local cc = Instance.new("ColorCorrectionEffect")
-cc.Parent = l
-cc.Enabled = true
-cc.Brightness = 0.05
-cc.Contrast = 0.15
-cc.Saturation = 0.25
-cc.TintColor = Color3.fromRGB(255, 140, 90)
+local cc = Instance.new("ColorCorrectionEffect", lighting)
+cc.Brightness = 0.08
+cc.Contrast = 0.25
+cc.Saturation = 0.15
+cc.TintColor = Color3.fromRGB(255, 110, 50)            -- warm orange wash
+
+local blur = Instance.new("BlurEffect", lighting)        -- subtle haze
+blur.Size = 3
+
+local atmos = Instance.new("Atmosphere", lighting)       -- aerial perspective
+atmos.Density = 0.35
+atmos.Offset = 0
+atmos.Color = Color3.fromRGB(255, 140, 80)
+atmos.Decay = Color3.fromRGB(90, 60, 120)               -- purple decay
+atmos.Glare = 0.6
+atmos.Haze = 0.8
 
 
 Tabs.Settings:CreateButton{
