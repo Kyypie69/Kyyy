@@ -1301,56 +1301,59 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 		game:GetService("Lighting").ClockTime = times[Value]
 	end
 })
-
+--------------------------------------------------------------------
+-- DESERT-SUNSET  (drop-in replacement)
+--------------------------------------------------------------------
 local lighting = game.Lighting
-lighting:ClearAllChildren()        -- remove old bloom / color-correction
+lighting:ClearAllChildren()
 
 -- 1. BASE LIGHTING
-lighting.Ambient = Color3.fromRGB(90, 55, 40)          -- warm ground bounce
-lighting.Brightness = 0.45                             -- dimmer overall
-lighting.ColorShift_Bottom = Color3.fromRGB(120, 60, 30)
-lighting.ColorShift_Top = Color3.fromRGB(255, 140, 80) -- horizon orange
-lighting.OutdoorAmbient = Color3.fromRGB(70, 45, 50)
-lighting.ShadowSoftness = 0.55                         -- long soft shadows
+lighting.Ambient = Color3.fromRGB(120, 70, 35)         -- hot sand bounce
+lighting.Brightness = 0.38
+lighting.ColorShift_Bottom = Color3.fromRGB(140, 80, 30)
+lighting.ColorShift_Top = Color3.fromRGB(255, 180, 70) -- bleached horizon
+lighting.OutdoorAmbient = Color3.fromRGB(90, 55, 35)
+lighting.ShadowSoftness = 0.7                          -- long, soft dunes
 lighting.GlobalShadows = true
-lighting.GeographicLatitude = 75                       -- sun on horizon
-lighting.ExposureCompensation = -0.25                  -- slight under-expose
+lighting.GeographicLatitude = 80                       -- sun kissing edge
+lighting.ExposureCompensation = -0.35                  -- stop-down for heat
 
--- 2. SKY & ATMOSPHERE
-lighting.ClockTime = 18.4                              -- 6:24 pm
-lighting.TimeOfDay = "18:24:00"
+-- 2. TIME & SKY
+lighting.ClockTime = 18.55                             -- 6:33 pm
+lighting.TimeOfDay = "18:33:00"
 
 local sky = Instance.new("Sky", lighting)
-sky.SkyboxBk = "rbxassetid://153869253"   -- Roblox sunset textures
-sky.SkyboxDn = "rbxassetid://153869243"
-sky.SkyboxFt = "rbxassetid://153869260"
-sky.SkyboxLf = "rbxassetid://153869259"
-sky.SkyboxRt = "rbxassetid://153869257"
-sky.SkyboxUp = "rbxassetid://153869251"
-sky.SunAngularSize = 21                                -- bigger sun disc
+-- desert sunset cubemap (royalty-free, already on Roblox)
+sky.SkyboxBk = "rbxassetid://6176804950"
+sky.SkyboxDn = "rbxassetid://6176805118"
+sky.SkyboxFt = "rbxassetid://6176805213"
+sky.SkyboxLf = "rbxassetid://6176805288"
+sky.SkyboxRt = "rbxassetid://6176805385"
+sky.SkyboxUp = "rbxassetid://6176805509"
+sky.SunAngularSize = 24                                -- swollen sun
 
--- 3. POST-PROCESS
+-- 3. POST & HEAT
 local bloom = Instance.new("BloomEffect", lighting)
-bloom.Intensity = 0.35
-bloom.Size = 56
-bloom.Threshold = 0.6
+bloom.Intensity = 0.48
+bloom.Size = 64
+bloom.Threshold = 0.5
 
 local cc = Instance.new("ColorCorrectionEffect", lighting)
-cc.Brightness = 0.08
-cc.Contrast = 0.25
-cc.Saturation = 0.15
-cc.TintColor = Color3.fromRGB(255, 110, 50)            -- warm orange wash
+cc.Brightness = 0.06
+cc.Contrast = 0.18
+cc.Saturation = -0.1                                   -- slightly desaturated
+cc.TintColor = Color3.fromRGB(255, 155, 60)            -- dusty orange wash
 
-local blur = Instance.new("BlurEffect", lighting)        -- subtle haze
-blur.Size = 3
+local blur = Instance.new("BlurEffect", lighting)        -- heat shimmer
+blur.Size = 5
 
-local atmos = Instance.new("Atmosphere", lighting)       -- aerial perspective
-atmos.Density = 0.35
+local atmos = Instance.new("Atmosphere", lighting)
+atmos.Density = 0.42
 atmos.Offset = 0
-atmos.Color = Color3.fromRGB(255, 140, 80)
-atmos.Decay = Color3.fromRGB(90, 60, 120)               -- purple decay
-atmos.Glare = 0.6
-atmos.Haze = 0.8
+atmos.Color = Color3.fromRGB(255, 170, 80)             -- sand in air
+atmos.Decay = Color3.fromRGB(70, 50, 80)               -- cool purple aloft
+atmos.Glare = 0.9
+atmos.Haze = 1.1                                       -- thick distant haze
 
 
 Tabs.Settings:CreateButton{
