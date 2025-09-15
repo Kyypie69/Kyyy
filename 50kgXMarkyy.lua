@@ -1301,59 +1301,58 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 		game:GetService("Lighting").ClockTime = times[Value]
 	end
 })
---------------------------------------------------------------------
--- 3-D SUNRISE  (replace old block with this)
---------------------------------------------------------------------
-local lighting = game.Lighting
-lighting:ClearAllChildren()
 
--- 1. BASE LIGHTING
-lighting.Ambient = Color3.fromRGB(45, 50, 70)          -- cool dawn bounce
-lighting.Brightness = 0.55
-lighting.ColorShift_Bottom = Color3.fromRGB(30, 40, 60)
-lighting.ColorShift_Top = Color3.fromRGB(255, 130, 100)-- horizon peach
-lighting.OutdoorAmbient = Color3.fromRGB(40, 45, 65)
-lighting.ShadowSoftness = 0.6                          -- long soft shadows
-lighting.GlobalShadows = true
-lighting.GeographicLatitude = -80                      -- sun at sunrise edge
-lighting.ExposureCompensation = -0.2
+local a = game.Lighting
 
--- 2. TIME & SKY
-lighting.ClockTime = 6.15                              -- 6:09 am
-lighting.TimeOfDay = "06:09:00"
+--------------------------------------------------
+-- 3-D AMBIENT / OUTDOOR AMBIENT / COLOR-SHIFT
+--------------------------------------------------
+-- Build a 3-key ColorSequence that stays flat at the old RGB value
+local function flatSequence(rgb)
+    local c = Color3.fromRGB(rgb.r, rgb.g, rgb.b)
+    return ColorSequence.new{
+        ColorSequenceKeypoint.new(0, c),
+        ColorSequenceKeypoint.new(0.5, c),
+        ColorSequenceKeypoint.new(1, c)
+    }
+end
 
-local sky = Instance.new("Sky", lighting)
--- calm sunrise cubemap (already on Roblox)
-sky.SkyboxBk = "rbxassetid://6176804012"
-sky.SkyboxDn = "rbxassetid://6176804156"
-sky.SkyboxFt = "rbxassetid://6176804255"
-sky.SkyboxLf = "rbxassetid://6176804340"
-sky.SkyboxRt = "rbxassetid://6176804437"
-sky.SkyboxUp = "rbxassetid://6176804544"
-sky.SunAngularSize = 18                                -- crisp morning disc
+a.Ambient = Vector3.new(33/255, 33/255, 33/255)
+a.OutdoorAmbient = Vector3.new(51/255, 54/255, 67/255)
+a.ColorShift_Bottom = Vector3.new(0, 0, 0)
+a.ColorShift_Top = Vector3.new(255/255, 247/255, 237/255)
 
--- 3. POST & MIST
-local bloom = Instance.new("BloomEffect", lighting)
-bloom.Intensity = 0.25
-bloom.Size = 48
-bloom.Threshold = 0.65
+--------------------------------------------------
+-- 3-D BLOOM
+--------------------------------------------------
+local b = Instance.new("BloomEffect")
+b.Parent = a
+b.Enabled = true
+b.Intensity = Vector3.new(0.04, 0.04, 0.04)   -- r,g,b intensity
+b.Size = 1900
+b.Threshold = 0.915
 
-local cc = Instance.new("ColorCorrectionEffect", lighting)
-cc.Brightness = 0.08
-cc.Contrast = 0.15
-cc.Saturation = 0.12
-cc.TintColor = Color3.fromRGB(255, 180, 140)           -- gentle peach tint
+--------------------------------------------------
+-- 3-D COLOR-CORRECTION
+--------------------------------------------------
+local c = Instance.new("ColorCorrectionEffect")
+c.Parent = a
+c.Enabled = true
+c.Brightness = Vector3.new(0.176, 0.176, 0.176)
+c.Contrast = Vector3.new(0.39, 0.39, 0.39)
+c.Saturation = Vector3.new(0.2, 0.2, 0.2)
+c.TintColor = flatSequence(Color3.fromRGB(217, 145, 57))
 
-local blur = Instance.new("BlurEffect", lighting)        -- morning mist
-blur.Size = 4
-
-local atmos = Instance.new("Atmosphere", lighting)
-atmos.Density = 0.28
-atmos.Offset = 0
-atmos.Color = Color3.fromRGB(255, 180, 140)            -- low sun scatter
-atmos.Decay = Color3.fromRGB(50, 60, 100)              -- cool purple aloft
-atmos.Glare = 0.5
-atmos.Haze = 2.2                                       -- thick ground mist
+--------------------------------------------------
+-- EVERYTHING ELSE (already scalar)
+--------------------------------------------------
+a.Brightness = 1
+a.EnvironmentDiffuseScale = 0.105
+a.EnvironmentSpecularScale = 0.522
+a.GlobalShadows = true
+a.ShadowSoftness = 0.04
+a.GeographicLatitude = -15.525
+a.ExposureCompensation = 0.75
 
 
 Tabs.Settings:CreateButton{
