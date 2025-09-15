@@ -9,7 +9,7 @@ local Window = Library:CreateWindow{
     Size = UDim2.fromOffset(600, 325),
     Resize = false,
     Acrylic = true,
-    Theme = "Viow Arabian Mix",
+    Theme = "Viow Neon",
     MinimizeKey = Enum.KeyCode.RightControl
 }local Tabs = {
 	Main = Window:CreateTab{
@@ -46,7 +46,7 @@ local Window = Library:CreateWindow{
 	},
 	SkyChanger = Window:CreateTab{
 		Title = "Sky Changer",
-		Icon = "phosphor-sliders-bold"
+		Icon = "phosphor-mountain-bold"
 	}
 }
 
@@ -1307,51 +1307,43 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 -------------------------------------------------
---  WINTER 5-D  (hyper-real frost)
+-------------------------------------------------
+--  STATIC WINTER 5-D
 -------------------------------------------------
 local L = game.Lighting
-L.Ambient = Color3.fromRGB(180, 195, 215)       -- over-bright frost
-L.Brightness = 1.1                              -- blinding snow sun
+L.Ambient = Color3.fromRGB(180, 195, 215)
+L.Brightness = 1.1
 L.ColorShift_Bottom = Color3.fromRGB(160, 180, 200)
-L.ColorShift_Top    = Color3.fromRGB(240, 245, 255) -- white-out sky
-L.EnvironmentDiffuseScale = 0.45                -- snow bounce x2
-L.EnvironmentSpecularScale = 0.9                -- razor glint
+L.ColorShift_Top    = Color3.fromRGB(240, 245, 255)
+L.EnvironmentDiffuseScale = 0.45
+L.EnvironmentSpecularScale = 0.9
 L.GlobalShadows = true
 L.OutdoorAmbient = Color3.fromRGB(190, 205, 220)
-L.ShadowSoftness = 0.05                         -- razor-sharp
-L.GeographicLatitude = 75                       -- polar sun
-L.ExposureCompensation = 0.15                   -- slight over-expose
+L.ShadowSoftness = 0.05
+L.GeographicLatitude = 75
+L.ExposureCompensation = 0.15
 
--- DIAMOND-BLOOM (snow sparkle)
+-- diamond sparkle
 local bloom = Instance.new("BloomEffect", L)
 bloom.Enabled   = true
-bloom.Intensity = 0.75                          -- star-dust
+bloom.Intensity = 0.75
 bloom.Size      = 2400
 bloom.Threshold = 0.45
 
--- HIGH-CONTRAST ICE
+-- crushed-ice grade
 local cc = Instance.new("ColorCorrectionEffect", L)
 cc.Brightness  = 0.12
-cc.Contrast    = 0.5                            -- crushed blacks
-cc.Saturation  = -0.45                          -- bleached
-cc.TintColor   = Color3.fromRGB(220, 235, 255)  -- arctic blue-white
+cc.Contrast    = 0.5
+cc.Saturation  = -0.45
+cc.TintColor   = Color3.fromRGB(220, 235, 255)
 
--- VOLUMETRIC FOG (3-D depth)
+-- volumetric haze
 local fog = Instance.new("Atmosphere", L)
-fog.Density     = 0.35
-fog.Offset      = 25
-fog.Color       = Color3.fromRGB(200, 220, 240)
-fog.Decay       = Color3.fromRGB(170, 190, 210)
-fog.Glare       = 0.6                           -- sun halo
-
--- MOTION SHIMMER (4-D)
-local shimmer = Instance.new("ColorCorrectionEffect", L)
-shimmer.Name = "Shimmer"
-game:GetService("RunService").Heartbeat:Connect(function(t)
-    local s = 0.015 * math.sin(t * 4)
-    shimmer.Brightness = s
-    shimmer.Saturation = s * 0.5
-end)
+fog.Density = 0.35
+fog.Offset  = 25
+fog.Color   = Color3.fromRGB(200, 220, 240)
+fog.Decay   = Color3.fromRGB(170, 190, 210)
+fog.Glare   = 0.6
 
 -- MICRO-PULSE (5-D emotion)
 local pulse = Instance.new("BloomEffect", L)
@@ -1673,17 +1665,17 @@ Tabs.SkyChanger:AddButton({
   rekt.Contrast = 1
   rekt.Saturation = 1
   local topkek = Instance.new('BlurEffect', game.Lighting)
-  topkek.Size = 3
+  topkek.Size = 10
   local bloom = Instance.new('BloomEffect', game.Lighting)
   bloom.Intensity = 0.4
-  bloom.Size = 56
+  bloom.Size = 86
   bloom.Threshold = 1
  
            game.Lighting.TimeOfDay=0;
             game.Lighting.Brightness=0;
             game.Lighting.ShadowColor=Color3.new(0,0,0);
             game.Lighting.Ambient=Color3.new(1,0,0);
-            game.Lighting.FogEnd=200;
+            game.Lighting.FogEnd=300;
             game.Lighting.FogColor=Color3.new(1,0,0);
       end    
   })
