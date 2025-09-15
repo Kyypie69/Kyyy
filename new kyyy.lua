@@ -468,61 +468,6 @@ end
 -------------------------------------------
 local Misc = Tabs.Misc
 
--- dropdown to pick victim
-local TargetDropdown = Misc:CreateDropdown("KillTargetDrop", {
-    Title = "Select Target",
-    Description = "Pick player to auto-kill",
-    Values = refreshDropdown(),
-    Multi = false,
-    Default = nil,
-    Callback = function(selection)
-        chosenPlayer = selection and Players:FindFirstChild(selection) or nil
-    end
-})
-
--- auto-kill chosen toggle
-Misc:CreateToggle("AutoKillChosen", {
-    Title = "Auto Kill Target",
-    Default = false,
-    Callback = function(v)
-        if v then
-            autoKillCon = RunService.Heartbeat:Connect(function()
-                if chosenPlayer and chosenPlayer.Character then
-                    kill(chosenPlayer)
-                end
-            end)
-        else
-            if autoKillCon then autoKillCon:Disconnect(); autoKillCon = nil end
-        end
-    end
-})
-
--- kill-all toggle
-Misc:CreateToggle("AutoKillAll", {
-    Title = "Auto Kill All",
-    Default = false,
-    Callback = function(v)
-        killAllEnabled = v
-        if v then
-            killAllCon = RunService.Heartbeat:Connect(function()
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LP then kill(p) end
-                end
-            end)
-        else
-            if killAllCon then killAllCon:Disconnect(); killAllCon = nil end
-        end
-    end
-})
-
--- refresh dropdown when players join/leave
-Players.PlayerAdded:Connect(function()
-    TargetDropdown:SetValues(refreshDropdown())
-end)
-Players.PlayerRemoving:Connect(function()
-    TargetDropdown:SetValues(refreshDropdown())
-end)
-
 local Toggle = Tabs.Misc:AddToggle("AutoWheel", {
 	Title = "Auto Spin Wheel",
 	Default = false,
@@ -715,7 +660,7 @@ Toggle:OnChanged(function(state)
 end)
 
 -- Speed Punch Button
-Tabs.Killing:CreateButton({
+Tabs.Killing:CreateToggle({
     Title = "Fast Punch",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -727,7 +672,7 @@ Tabs.Killing:CreateButton({
 })
 
 -- Normal Punch Button
-Tabs.Killing:CreateButton({
+Tabs.Killing:CreateToggle({
     Title = "Normal Punch",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -743,7 +688,7 @@ local whitelist = {}
 local playerList = {}
 
 -- Create Dropdown
-local Dropdown = Tabs.Killing:AddDropdown("WhitelistDropdown", {
+local Dropdown = Tabs.Killing:AddDropdown("Whitelist", {
     Title = "Whitelist Player(s)",
     Values = {},
     Multi = true,
@@ -819,7 +764,7 @@ local targetPlayerName = nil
 
 -- Dropdown dinámico
 local targetPlayerList = {}
-local TargetDropdown = Tabs.Killing:AddDropdown("TargetPlayerDropdown", {
+local TargetDropdown = Tabs.Killing:AddDropdown("TargetList", {
     Title = "Target Player",
     Values = {},
     Multi = false, -- solo uno
@@ -885,7 +830,7 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = game.Players.LocalPlayer
 
 -- Dropdown
-local SpectateDropdown = Tabs.Killing:AddDropdown("SpectateDropdown", {
+local SpectateDropdown = Tabs.Killing:AddDropdown("SpectateList", {
     Title = "Spectate Player",
     Values = {},
     Multi = false,
@@ -935,7 +880,7 @@ end)
 
 -- Botón para volver a ti
 Tabs.Killing:CreateButton({
-    Title = "Dejar de Espectear",
+    Title = "View Player",
     Callback = function()
         spectateTarget = nil
         local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -1035,7 +980,7 @@ end)
 
 -- Botón para dejar de seguir
 Tabs.Killing:CreateButton({
-    Title = "↩ Dejar de Seguir",
+    Title = "↩ Stop Following",
     Callback = function()
         following = false
         followTarget = nil
