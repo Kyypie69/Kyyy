@@ -1371,7 +1371,7 @@ Tabs.SkyChanger:AddButton({
     Title = "Full Night Sky",
     Callback = function()
         getgenv().Kitten = 5
-        local texture = "http://www.roblox.com/asset/?id=17055447520"
+        local acrylic = "http://www.roblox.com/asset/?id=17055447520"
   local sky = Instance.new("Sky")
  
   sky.Parent = game.Lighting
