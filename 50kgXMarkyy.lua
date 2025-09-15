@@ -14,7 +14,7 @@ local Window = Library:CreateWindow{
 }local Tabs = {
 	Main = Window:CreateTab{
 		Title = "Home | Packs",
-		Icon = "phosphor-house-bold"
+		Icon = "phosphor-users-bold"
 	},
 	AutoFarm = Window:CreateTab{
 		Title = "Auto Farm Tools",
@@ -27,6 +27,10 @@ local Window = Library:CreateWindow{
 	Rebirth = Window:CreateTab{
 		Title = "Rebirth",
 		Icon = "phosphor-arrows-clockwise-bold"
+	},
+	Killing = Window:CreateTab{
+		Title = "Killing",
+		Icon = "skull"
 	},
 	Stats = Window:CreateTab{
 		Title = "Stats",
@@ -464,61 +468,6 @@ end
 -------------------------------------------
 local Misc = Tabs.Misc
 
--- dropdown to pick victim
-local TargetDropdown = Misc:CreateDropdown("KillTargetDrop", {
-    Title = "Select Target",
-    Description = "Pick player to auto-kill",
-    Values = refreshDropdown(),
-    Multi = false,
-    Default = nil,
-    Callback = function(selection)
-        chosenPlayer = selection and Players:FindFirstChild(selection) or nil
-    end
-})
-
--- auto-kill chosen toggle
-Misc:CreateToggle("AutoKillChosen", {
-    Title = "Auto Kill Target",
-    Default = false,
-    Callback = function(v)
-        if v then
-            autoKillCon = RunService.Heartbeat:Connect(function()
-                if chosenPlayer and chosenPlayer.Character then
-                    kill(chosenPlayer)
-                end
-            end)
-        else
-            if autoKillCon then autoKillCon:Disconnect(); autoKillCon = nil end
-        end
-    end
-})
-
--- kill-all toggle
-Misc:CreateToggle("AutoKillAll", {
-    Title = "Auto Kill All",
-    Default = false,
-    Callback = function(v)
-        killAllEnabled = v
-        if v then
-            killAllCon = RunService.Heartbeat:Connect(function()
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LP then kill(p) end
-                end
-            end)
-        else
-            if killAllCon then killAllCon:Disconnect(); killAllCon = nil end
-        end
-    end
-})
-
--- refresh dropdown when players join/leave
-Players.PlayerAdded:Connect(function()
-    TargetDropdown:SetValues(refreshDropdown())
-end)
-Players.PlayerRemoving:Connect(function()
-    TargetDropdown:SetValues(refreshDropdown())
-end)
-
 local Toggle = Tabs.Misc:AddToggle("AutoWheel", {
 	Title = "Auto Spin Wheel",
 	Default = false,
@@ -687,6 +636,375 @@ local kingTeleportToggle = Tabs.IslandFarm:CreateToggle("MuscleKingTeleport", {
 	end
 })
 
+-- Auto Punch Toggle (No Animation)
+local Toggle = Tabs.Killing:CreateToggle("AutoPunchNoAnim", {Title = "Auto Punch (No Anim)", Default = false})
+Toggle:OnChanged(function(state)
+    while state and Toggle.Value do
+        local player = game.Players.LocalPlayer
+        local char = game.Workspace:FindFirstChild(player.Name)
+        local punchTool = player.Backpack:FindFirstChild("Punch") or (char and char:FindFirstChild("Punch"))
+
+        if punchTool then
+            if punchTool.Parent ~= char then
+                punchTool.Parent = char -- Equip
+            end
+
+            player.muscleEvent:FireServer("punch", "rightHand")
+            player.muscleEvent:FireServer("punch", "leftHand")
+        else
+            warn("Punch tool not found")
+            Toggle:SetValue(false) -- Stop if tool not found
+        end
+        task.wait()
+    end
+end)
+
+-- Speed Punch Button
+Tabs.Killing:CreateToggle({
+    Title = "Fast Punch",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local punch = player.Backpack:FindFirstChild("Punch") or (game.Workspace:FindFirstChild(player.Name) and game.Workspace[player.Name]:FindFirstChild("Punch"))
+        if punch and punch:FindFirstChild("attackTime") then
+            punch.attackTime.Value = 0.065
+        end
+    end
+})
+
+-- Normal Punch Button
+Tabs.Killing:CreateToggle({
+    Title = "Normal Punch",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local punch = player.Backpack:FindFirstChild("Punch") or (game.Workspace:FindFirstChild(player.Name) and game.Workspace[player.Name]:FindFirstChild("Punch"))
+        if punch and punch:FindFirstChild("attackTime") then
+            punch.attackTime.Value = 0.35
+        end
+    end
+})
+
+	-- Whitelist Table
+local whitelist = {}
+local playerList = {}
+
+-- Create Dropdown
+local Dropdown = Tabs.Killing:AddDropdown("Whitelist", {
+    Title = "Whitelist Player(s)",
+    Values = {},
+    Multi = true,
+    Default = {},
+})
+
+-- Populate initially
+for _, player in ipairs(game.Players:GetPlayers()) do
+    table.insert(playerList, player.Name)
+end
+Dropdown:SetValues(playerList)
+
+-- Update on PlayerAdded
+game.Players.PlayerAdded:Connect(function(player)
+    table.insert(playerList, player.Name)
+    Dropdown:SetValues(playerList)
+end)
+
+-- Update on PlayerRemoving
+game.Players.PlayerRemoving:Connect(function(player)
+    for i, name in ipairs(playerList) do
+        if name == player.Name then
+            table.remove(playerList, i)
+            break
+        end
+    end
+    Dropdown:SetValues(playerList)
+end)
+
+-- Sync whitelist
+Dropdown:OnChanged(function(selectedPlayers)
+    table.clear(whitelist)
+    for _, name in ipairs(selectedPlayers) do
+        whitelist[name] = true
+    end
+    print("Whitelisted:", selectedPlayers)
+end)
+
+local AutokillToggle = Tabs.Killing:CreateToggle("AutoKill", {Title = "Auto Kill", Default = false})
+AutokillToggle:OnChanged(function(state)
+    while state and AutokillToggle.Value do
+        local player = game.Players.LocalPlayer
+
+        -- Auto punch setup
+        local punch = player.Backpack:FindFirstChild("Punch") or (player.Character and player.Character:FindFirstChild("Punch"))
+        if punch and punch:FindFirstChild("attackTime") then
+            punch.attackTime.Value = 0.065
+        end
+
+        -- Auto kill logic
+        for _, target in ipairs(game.Players:GetPlayers()) do
+            if target ~= player and not whitelist[target.Name] then
+                local root = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+                local rHand = player.Character and player.Character:FindFirstChild("RightHand")
+                local lHand = player.Character and player.Character:FindFirstChild("LeftHand")
+
+                if root and rHand and lHand then
+                    firetouchinterest(rHand, root, 1)
+                    firetouchinterest(lHand, root, 1)
+                    firetouchinterest(rHand, root, 0)
+                    firetouchinterest(lHand, root, 0)
+                end
+            end
+        end
+
+        task.wait(0.1)
+    end
+end)
+
+-- Target Kill
+-- Target Kill (Dropdown en lugar de Input)
+local targetPlayerName = nil
+
+-- Dropdown dinámico
+local targetPlayerList = {}
+local TargetDropdown = Tabs.Killing:AddDropdown("TargetList", {
+    Title = "Target Player",
+    Values = {},
+    Multi = false, -- solo uno
+    Default = {}
+})
+
+-- Llenar inicialmente
+for _, player in ipairs(game.Players:GetPlayers()) do
+    table.insert(targetPlayerList, player.Name)
+end
+TargetDropdown:SetValues(targetPlayerList)
+
+-- Actualizar al entrar jugador
+game.Players.PlayerAdded:Connect(function(player)
+    table.insert(targetPlayerList, player.Name)
+    TargetDropdown:SetValues(targetPlayerList)
+end)
+
+-- Actualizar al salir jugador
+game.Players.PlayerRemoving:Connect(function(player)
+    for i, name in ipairs(targetPlayerList) do
+        if name == player.Name then
+            table.remove(targetPlayerList, i)
+            break
+        end
+    end
+    TargetDropdown:SetValues(targetPlayerList)
+end)
+
+-- Guardar el jugador seleccionado
+TargetDropdown:OnChanged(function(selected)
+    targetPlayerName = selected
+    print("Target set to:", targetPlayerName)
+end)
+
+-- Auto Kill Target
+local Toggle = Tabs.Killing:CreateToggle("AutoKillTarget", {Title = "Auto Kill Player", Default = false})
+Toggle:OnChanged(function(state)
+    while state and Toggle.Value do
+        local player = game.Players.LocalPlayer
+        local target = game.Players:FindFirstChild(targetPlayerName)
+
+        if target and target ~= player then
+            local root = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+            local rHand = player.Character and player.Character:FindFirstChild("RightHand")
+            local lHand = player.Character and player.Character:FindFirstChild("LeftHand")
+
+            if root and rHand and lHand then
+                firetouchinterest(rHand, root, 1)
+                firetouchinterest(lHand, root, 1)
+                firetouchinterest(rHand, root, 0)
+                firetouchinterest(lHand, root, 0)
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- Spectate Player (Dropdown + Botón de volver)
+local spectateTarget = nil
+local spectatePlayerList = {}
+local Camera = workspace.CurrentCamera
+local LocalPlayer = game.Players.LocalPlayer
+
+-- Dropdown
+local SpectateDropdown = Tabs.Killing:AddDropdown("SpectateList", {
+    Title = "Spectate Player",
+    Values = {},
+    Multi = false,
+    Default = {}
+})
+
+-- Llenar inicialmente con nombres
+for _, player in ipairs(game.Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        table.insert(spectatePlayerList, player.Name)
+    end
+end
+SpectateDropdown:SetValues(spectatePlayerList)
+
+-- Actualizar al entrar
+game.Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        table.insert(spectatePlayerList, player.Name)
+        SpectateDropdown:SetValues(spectatePlayerList)
+    end
+end)
+
+-- Actualizar al salir
+game.Players.PlayerRemoving:Connect(function(player)
+    for i, name in ipairs(spectatePlayerList) do
+        if name == player.Name then
+            table.remove(spectatePlayerList, i)
+            break
+        end
+    end
+    SpectateDropdown:SetValues(spectatePlayerList)
+
+    if spectateTarget == player.Name then
+        spectateTarget = nil
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+        if hum then
+            Camera.CameraSubject = hum
+        end
+    end
+end)
+
+-- Guardar seleccionado
+SpectateDropdown:OnChanged(function(selected)
+    spectateTarget = selected
+    print("Spectating:", spectateTarget or "None")
+end)
+
+-- Botón para volver a ti
+Tabs.Killing:CreateButton({
+    Title = "View Player",
+    Callback = function()
+        spectateTarget = nil
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+        if hum then
+            Camera.CameraSubject = hum
+        end
+        print("Stopped spectating, returned to self")
+    end
+})
+
+-- Seguir al jugador
+game:GetService("RunService").RenderStepped:Connect(function()
+    if spectateTarget then
+        local target = game.Players:FindFirstChild(spectateTarget)
+        if target and target.Character then
+            local hum = target.Character:FindFirstChild("Humanoid")
+            if hum then
+                Camera.CameraSubject = hum
+            end
+        end
+    end
+end)
+
+-- Teleport / Follow Player
+local followTarget = nil
+local following = false
+local Camera = workspace.CurrentCamera
+local LocalPlayer = game.Players.LocalPlayer
+
+-- Dropdown de TP
+local TeleportDropdown = Tabs.Killing:AddDropdown("TeleportDropdown", {
+    Title = "Teleport To Player",
+    Values = {},
+    Multi = false,
+    Default = {}
+})
+
+-- Lista dinámica de jugadores
+local tpPlayerList = {}
+for _, player in ipairs(game.Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        table.insert(tpPlayerList, player.Name)
+    end
+end
+TeleportDropdown:SetValues(tpPlayerList)
+
+game.Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        table.insert(tpPlayerList, player.Name)
+        TeleportDropdown:SetValues(tpPlayerList)
+    end
+end)
+
+game.Players.PlayerRemoving:Connect(function(player)
+    for i, name in ipairs(tpPlayerList) do
+        if name == player.Name then
+            table.remove(tpPlayerList, i)
+            break
+        end
+    end
+    TeleportDropdown:SetValues(tpPlayerList)
+    if followTarget == player.Name then
+        followTarget = nil
+        following = false
+    end
+end)
+
+-- Función auxiliar: teletransportar cerca
+local function teleportNear(targetPlayer)
+    local targetChar = targetPlayer.Character
+    if not (targetChar and targetChar:FindFirstChild("HumanoidRootPart")) then return end
+    local targetHRP = targetChar.HumanoidRootPart
+    local myChar = LocalPlayer.Character
+    if not (myChar and myChar:FindFirstChild("HumanoidRootPart")) then return end
+
+    local offset = Vector3.new(5, 3, 5)
+    myChar.HumanoidRootPart.CFrame = CFrame.new(targetHRP.Position + offset)
+end
+
+-- Al seleccionar jugador -> TP instantáneo
+TeleportDropdown:OnChanged(function(selected)
+    if selected and selected ~= "" then
+        local target = game.Players:FindFirstChild(selected)
+        if target then
+            teleportNear(target)
+            print("Teleported to:", target.Name)
+        end
+    end
+end)
+
+-- Toggle para seguir
+local followToggle = Tabs.Killing:CreateToggle("FollowToggle", {Title = "Follow Selected Player", Default = false})
+followToggle:OnChanged(function(state)
+    following = state
+    followTarget = state and TeleportDropdown.Value or nil
+end)
+
+-- Botón para dejar de seguir
+Tabs.Killing:CreateButton({
+    Title = "↩ Stop Following",
+    Callback = function()
+        following = false
+        followTarget = nil
+        followToggle:SetValue(false)
+        print("Stopped following")
+    end
+})
+
+-- Loop para seguir
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if following and followTarget then
+            local target = game.Players:FindFirstChild(followTarget)
+            if target then
+                teleportNear(target)
+            else
+                following = false
+                followTarget = nil
+            end
+        end
+    end
+end)
+	
 local IntSection = Tabs.Stats:CreateSection("Player Stats")
 local RunService = game:GetService("RunService")
 local player = game.Players.LocalPlayer
@@ -1020,29 +1338,53 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 
-local a = game.Lighting
-a.Ambient = Color3.fromRGB(33, 33, 33)
-a.Brightness = 1
-a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
-a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
-a.EnvironmentDiffuseScale = 0.105
-a.EnvironmentSpecularScale = 0.522
-a.GlobalShadows = true
-a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
-a.ShadowSoftness = 0.04
-a.GeographicLatitude = -15.525
-a.ExposureCompensation = 0.75
-local b = Instance.new("BloomEffect", a)
-b.Enabled = true
-b.Intensity = 0.04
-b.Size = 1900
-b.Threshold = 0.915
-local c = Instance.new("ColorCorrectionEffect", a)
-c.Brightness = 0.176
-c.Contrast = 0.39
-c.Enabled = true
-c.Saturation = 0.2
-c.TintColor = Color3.fromRGB(217, 145, 57)
+--------------------------------------------------------------------
+-- SUNSET LIGHTING
+--------------------------------------------------------------------
+local l = game:GetService("Lighting")
+
+-- time-of-day → sunset
+l.ClockTime = 18.35          -- 6:20 pm
+l.GeographicLatitude = -2    -- sun almost on horizon
+
+-- ambient colours (warm)
+l.Ambient = Color3.fromRGB(110, 75, 60)
+l.OutdoorAmbient = Color3.fromRGB(180, 110, 80)
+
+-- sun / sky
+l.Brightness = 1.6
+l.ColorShift_Top = Color3.fromRGB(255, 180, 110)   -- warm sky tint
+l.ColorShift_Bottom = Color3.fromRGB(90, 50, 40)   -- ground bounce
+l.GlobalShadows = true
+l.ShadowSoftness = 0.08
+
+-- exposure
+l.ExposureCompensation = 0.45
+
+-- leave future lighting scales neutral
+l.EnvironmentDiffuseScale = 0
+l.EnvironmentSpecularScale = 0
+
+--------------------------------------------------------------------
+-- BLOOM (gentle glow around bright spots)
+--------------------------------------------------------------------
+local bloom = Instance.new("BloomEffect")
+bloom.Parent = l
+bloom.Enabled = true
+bloom.Intensity = 0.35
+bloom.Size = 24
+bloom.Threshold = 0.77
+
+--------------------------------------------------------------------
+-- COLOR CORRECTION (overall orange wash)
+--------------------------------------------------------------------
+local cc = Instance.new("ColorCorrectionEffect")
+cc.Parent = l
+cc.Enabled = true
+cc.Brightness = 0.05
+cc.Contrast = 0.15
+cc.Saturation = 0.25
+cc.TintColor = Color3.fromRGB(255, 140, 90)
 
 
 Tabs.Settings:CreateButton{
