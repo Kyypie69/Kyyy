@@ -1309,46 +1309,49 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 -------------------------------------------------
--------------------------------------------------
---  STATIC WINTER 5-D
+--  SOFT-WINTER 5-D  (warmer & gentler revision)
 -------------------------------------------------
 local L = game.Lighting
-L.Ambient = Color3.fromRGB(180, 195, 215)
-L.Brightness = 1.1
-L.ColorShift_Bottom = Color3.fromRGB(160, 180, 200)
-L.ColorShift_Top    = Color3.fromRGB(240, 245, 255)
-L.EnvironmentDiffuseScale = 0.45
-L.EnvironmentSpecularScale = 0.9
+
+-- 1.  Base light – lower contrast, warmer sun, gentler shadows
+L.Ambient = Color3.fromRGB(200, 205, 215)        -- lifted + warmer
+L.Brightness = 0.9                               -- pulled down 0.2
+L.ColorShift_Top    = Color3.fromRGB(255, 248, 240)  -- warm sky
+L.ColorShift_Bottom = Color3.fromRGB(210, 215, 225)  -- warm bounce
+L.OutdoorAmbient = Color3.fromRGB(205, 210, 220)
+L.ShadowSoftness = 0.25                          -- was 0.05
 L.GlobalShadows = true
-L.OutdoorAmbient = Color3.fromRGB(190, 205, 220)
-L.ShadowSoftness = 0.05
-L.GeographicLatitude = 75
-L.ExposureCompensation = 0.15
+L.GeographicLatitude = 68                        -- dropped 7° → lower sun
+L.ExposureCompensation = 0.08                    -- slight darken to taste
 
--- diamond sparkle
-local bloom = Instance.new("BloomEffect", L)
+-- 2.  PBR scales – dial back a touch for velvet surfaces
+L.EnvironmentDiffuseScale  = 0.35                -- was 0.45
+L.EnvironmentSpecularScale = 0.75                -- was 0.9
+
+-- 3.  “Diamond sparkle” bloom – keep, but softer
+local bloom = L:FindFirstChild("BloomEffect") or Instance.new("BloomEffect", L)
 bloom.Enabled   = true
-bloom.Intensity = 0.75
+bloom.Intensity = 0.55                           -- was 0.75
 bloom.Size      = 2400
-bloom.Threshold = 0.45
+bloom.Threshold = 0.5                            -- raised → less fire
 
--- crushed-ice grade
-local cc = Instance.new("ColorCorrectionEffect", L)
-cc.Brightness  = 0.12
-cc.Contrast    = 0.5
-cc.Saturation  = -0.45
-cc.TintColor   = Color3.fromRGB(220, 235, 255)
+-- 4.  Crushed-ice grade – less bleach, more cream
+local cc = L:FindFirstChild("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect", L)
+cc.Brightness  = 0.06                            -- halved
+cc.Contrast    = 0.25                            -- halved
+cc.Saturation  = -0.25                           -- eased back
+cc.TintColor   = Color3.fromRGB(235, 240, 250)   -- cream-white tint
 
--- volumetric haze
-local fog = Instance.new("Atmosphere", L)
-fog.Density = 0.35
-fog.Offset  = 25
-fog.Color   = Color3.fromRGB(200, 220, 240)
-fog.Decay   = Color3.fromRGB(170, 190, 210)
-fog.Glare   = 0.6
+-- 5.  Volumetric haze – thinner, warmer
+local fog = L:FindFirstChild("Atmosphere") or Instance.new("Atmosphere", L)
+fog.Density = 0.22                               -- was 0.35
+fog.Offset  = 30                                 -- push haze further
+fog.Color   = Color3.fromRGB(230, 235, 245)      -- warm fog
+fog.Decay   = Color3.fromRGB(200, 210, 225)
+fog.Glare   = 0.45                               -- was 0.6
 
--- MICRO-PULSE (5-D emotion)
-local pulse = Instance.new("BloomEffect", L)
+-- 6.  Micro-pulse (kept exactly as-is for 5-D emotion)
+local pulse = L:FindFirstChild("Pulse") or Instance.new("BloomEffect", L)
 pulse.Name = "Pulse"
 pulse.Enabled = true
 pulse.Size  = 3200
