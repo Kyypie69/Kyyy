@@ -1307,52 +1307,59 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 -------------------------------------------------
---  VIVID 3-D GALAXY
+--  WINTER 5-D  (hyper-real frost)
 -------------------------------------------------
 local L = game.Lighting
-L.Ambient = Color3.fromRGB(15, 5, 35)           -- almost-black void
-L.Brightness = 0.55                             -- keep sun readable
-L.ColorShift_Bottom = Color3.fromRGB(60, 15, 90)
-L.ColorShift_Top    = Color3.fromRGB(150, 60, 255) -- electric violet
-L.EnvironmentDiffuseScale = 0.25
-L.EnvironmentSpecularScale = 0.75               -- pop on metal
+L.Ambient = Color3.fromRGB(180, 195, 215)       -- over-bright frost
+L.Brightness = 1.1                              -- blinding snow sun
+L.ColorShift_Bottom = Color3.fromRGB(160, 180, 200)
+L.ColorShift_Top    = Color3.fromRGB(240, 245, 255) -- white-out sky
+L.EnvironmentDiffuseScale = 0.45                -- snow bounce x2
+L.EnvironmentSpecularScale = 0.9                -- razor glint
 L.GlobalShadows = true
-L.OutdoorAmbient = Color3.fromRGB(25, 15, 50)
-L.ShadowSoftness = 0.35                         -- soft volumetrics
-L.GeographicLatitude = 60
-L.ExposureCompensation = -0.35                  -- cinematic under-expose
+L.OutdoorAmbient = Color3.fromRGB(190, 205, 220)
+L.ShadowSoftness = 0.05                         -- razor-sharp
+L.GeographicLatitude = 75                       -- polar sun
+L.ExposureCompensation = 0.15                   -- slight over-expose
 
--- STAR-BLOOM
+-- DIAMOND-BLOOM (snow sparkle)
 local bloom = Instance.new("BloomEffect", L)
 bloom.Enabled   = true
-bloom.Intensity = 0.65                          -- vivid halos
-bloom.Size      = 2000
-bloom.Threshold = 0.55
+bloom.Intensity = 0.75                          -- star-dust
+bloom.Size      = 2400
+bloom.Threshold = 0.45
 
--- NEON COLOR-GRADE
+-- HIGH-CONTRAST ICE
 local cc = Instance.new("ColorCorrectionEffect", L)
-cc.Brightness  = 0.08
-cc.Contrast    = 0.35                           -- snap
-cc.Saturation  = 0.40                           -- vivid
-cc.TintColor   = Color3.fromRGB(180, 70, 255)   -- magenta nebula
+cc.Brightness  = 0.12
+cc.Contrast    = 0.5                            -- crushed blacks
+cc.Saturation  = -0.45                          -- bleached
+cc.TintColor   = Color3.fromRGB(220, 235, 255)  -- arctic blue-white
 
--- OPTIONAL: DEPTH OF FIELD for 3-D pop
-local dof = Instance.new("DepthOfFieldEffect", L)
-dof.Enabled          = true
-dof.FarIntensity     = 0.20
-dof.NearIntensity    = 0.15
-dof.InFocusRadius    = 150
-dof.FocusDistance    = 50
+-- VOLUMETRIC FOG (3-D depth)
+local fog = Instance.new("Atmosphere", L)
+fog.Density     = 0.35
+fog.Offset      = 25
+fog.Color       = Color3.fromRGB(200, 220, 240)
+fog.Decay       = Color3.fromRGB(170, 190, 210)
+fog.Glare       = 0.6                           -- sun halo
 
--- OPTIONAL: FILM GRAIN so blacks stay lively
-local grain = Instance.new("ColorCorrectionEffect", L) -- reuse CC
-grain.Brightness = 0
-grain.Contrast   = 0
-grain.Saturation = 0
-grain.TintColor  = Color3.new(1,1,1)
--- tiny noise via script (30 FPS)
-game:GetService("RunService").RenderStepped:Connect(function()
-    grain.Brightness = math.random(-8,8)/1000
+-- MOTION SHIMMER (4-D)
+local shimmer = Instance.new("ColorCorrectionEffect", L)
+shimmer.Name = "Shimmer"
+game:GetService("RunService").Heartbeat:Connect(function(t)
+    local s = 0.015 * math.sin(t * 4)
+    shimmer.Brightness = s
+    shimmer.Saturation = s * 0.5
+end)
+
+-- MICRO-PULSE (5-D emotion)
+local pulse = Instance.new("BloomEffect", L)
+pulse.Name = "Pulse"
+pulse.Enabled = true
+pulse.Size  = 3200
+game:GetService("RunService").Heartbeat:Connect(function(t)
+    pulse.Intensity = 0.65 + 0.08 * math.sin(t * 1.6)
 end)
 
 Tabs.Settings:CreateButton{
