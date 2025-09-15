@@ -2429,27 +2429,27 @@ end)
 end)
 
 local a = game.Lighting
-a.Ambient = Color3.fromRGB(160, 140, 100)      -- warm sand bounce
-a.Brightness = 1.35                            -- intense sun
-a.ColorShift_Bottom = Color3.fromRGB(120, 100, 70)
-a.ColorShift_Top = Color3.fromRGB(255, 210, 150)  -- pale yellow sky
-a.EnvironmentDiffuseScale = 0.45               -- bright diffuse
-a.EnvironmentSpecularScale = 0.6               -- crisp highlights
+a.Ambient = Color3.fromRGB(18, 12, 35)         -- deep-space violet
+a.Brightness = 0.55                            -- dim overall
+a.ColorShift_Bottom = Color3.fromRGB(10, 8, 25)
+a.ColorShift_Top = Color3.fromRGB(90, 55, 140) -- nebula purple
+a.EnvironmentDiffuseScale = 0.08               -- minimal diffuse
+a.EnvironmentSpecularScale = 0.85              -- sharp star glints
 a.GlobalShadows = true
-a.OutdoorAmbient = Color3.fromRGB(180, 160, 120)
-a.ShadowSoftness = 0.05                        -- razor-sharp shadows
-a.GeographicLatitude = 15                      -- high sun
-a.ExposureCompensation = 0.3                   -- slight over-exposure
+a.OutdoorAmbient = Color3.fromRGB(25, 20, 45)
+a.ShadowSoftness = 0.01                        -- razor darkness
+a.GeographicLatitude = 0                       -- neutral sun angle
+a.ExposureCompensation = -0.5                  -- under-expose for depth
 
 local b = Instance.new("BloomEffect", a)
 b.Enabled = true
-b.Intensity = 0.2                              -- light shimmer
-b.Size = 2000
-b.Threshold = 0.7
+b.Intensity = 0.6                              -- strong star bloom
+b.Size = 3200
+b.Threshold = 0.45
 
 local c = Instance.new("ColorCorrectionEffect", a)
-c.Brightness = 0.12
-c.Contrast = 0.25
+c.Brightness = 0.04
+c.Contrast = 0.55                              -- punchy nebula clouds
 c.Enabled = true
-c.Saturation = -0.1                            -- slightly bleached
-c.TintColor = Color3.fromRGB(255, 200, 120)    -- dusty yellow tint
+c.Saturation = 0.45                            -- rich galactic color
+c.TintColor = Color3.fromRGB(120, 70, 180)     -- cool purple tint
