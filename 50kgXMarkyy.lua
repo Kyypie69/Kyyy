@@ -4,7 +4,7 @@ local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercon
 -- 🏠 Creation
 local Window = Library:CreateWindow{
     Title = "Muscle Legends | KYY HUB",
-    SubTitle = "Markyy X 50KG",
+    SubTitle = "AI GENERATED",
     TabWidth = 125,
     Size = UDim2.fromOffset(600, 325),
     Resize = false,
