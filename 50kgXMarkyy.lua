@@ -1303,56 +1303,30 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 })
 
 local a = game.Lighting
-
-----------------------------------------------------
--- 4-D helper: 4-key ColorSequence, all keys = rgb
-----------------------------------------------------
-local function seq4(rgb)
-    local c = Color3.new(rgb.r/255, rgb.g/255, rgb.b/255)
-    return ColorSequence.new{
-        ColorSequenceKeypoint.new(0,    c),
-        ColorSequenceKeypoint.new(0.33, c),
-        ColorSequenceKeypoint.new(0.66, c),
-        ColorSequenceKeypoint.new(1,    c)
-    }
-end
-
-----------------------------------------------------
--- Lighting service
-----------------------------------------------------
-a.Ambient = seq4(Color3.new(33, 33, 33))
-a.OutdoorAmbient = seq4(Color3.new(51, 54, 67))
-a.ColorShift_Bottom = seq4(Color3.new(0, 0, 0))
-a.ColorShift_Top = seq4(Color3.new(255, 247, 237))
-
-a.Brightness = 1
-a.EnvironmentDiffuseScale = 0.105
-a.EnvironmentSpecularScale = 0.522
+a.Ambient = Color3.fromRGB(120, 75, 60)        -- warm low-fill
+a.Brightness = 0.75                            -- drop overall intensity
+a.ColorShift_Bottom = Color3.fromRGB(80, 45, 30)
+a.ColorShift_Top = Color3.fromRGB(255, 160, 100)  -- orange horizon
+a.EnvironmentDiffuseScale = 0.25               -- slightly stronger diffuse
+a.EnvironmentSpecularScale = 0.4               -- softer spec
 a.GlobalShadows = true
-a.ShadowSoftness = 0.04
-a.GeographicLatitude = -15.525
-a.ExposureCompensation = 0.75
+a.OutdoorAmbient = Color3.fromRGB(140, 90, 70)
+a.ShadowSoftness = 0.25                        -- longer, softer shadows
+a.GeographicLatitude = 25                      -- sun near horizon
+a.ExposureCompensation = -0.35                 -- slight under-exposure
 
-----------------------------------------------------
--- Bloom (4-D intensity via ColorSequence)
-----------------------------------------------------
-local b = Instance.new("BloomEffect")
-b.Parent = a
+local b = Instance.new("BloomEffect", a)
 b.Enabled = true
-b.Intensity = seq4(Color3.new(0.04*255, 0.04*255, 0.04*255))
-b.Size = 1900
-b.Threshold = 0.915
+b.Intensity = 0.35                             -- stronger bloom
+b.Size = 2400
+b.Threshold = 0.55                             -- more glow on brights
 
-----------------------------------------------------
--- ColorCorrection (4-D Brightness/Contrast/Saturation/Tint)
-----------------------------------------------------
-local c = Instance.new("ColorCorrectionEffect")
-c.Parent = a
+local c = Instance.new("ColorCorrectionEffect", a)
+c.Brightness = 0.05
+c.Contrast = 0.15
 c.Enabled = true
-c.Brightness = seq4(Color3.new(0.176*255, 0.176*255, 0.176*255))
-c.Contrast = seq4(Color3.new(0.39*255, 0.39*255, 0.39*255))
-c.Saturation = seq4(Color3.new(0.2*255, 0.2*255, 0.2*255))
-c.TintColor = seq4(Color3.new(217, 145, 57))
+c.Saturation = 0.1                             -- gentle warmth boost
+c.TintColor = Color3.fromRGB(255, 180, 120)    -- golden tint
 
 
 Tabs.Settings:CreateButton{
