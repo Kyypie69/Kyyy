@@ -2429,27 +2429,27 @@ end)
 end)
 
 local a = game.Lighting
-a.Ambient = Color3.fromRGB(18, 12, 35)         -- deep-space violet
-a.Brightness = 0.55                            -- dim overall
-a.ColorShift_Bottom = Color3.fromRGB(10, 8, 25)
-a.ColorShift_Top = Color3.fromRGB(90, 55, 140) -- nebula purple
-a.EnvironmentDiffuseScale = 0.08               -- minimal diffuse
-a.EnvironmentSpecularScale = 0.85              -- sharp star glints
+a.Ambient = Color3.fromRGB(255, 225, 235)      -- petal-pink fill
+a.Brightness = 1.1                             -- airy daylight
+a.ColorShift_Bottom = Color3.fromRGB(255, 210, 220)
+a.ColorShift_Top = Color3.fromRGB(255, 240, 245) -- almost-white sky
+a.EnvironmentDiffuseScale = 0.3                -- soft diffuse
+a.EnvironmentSpecularScale = 0.4               -- mild highlights
 a.GlobalShadows = true
-a.OutdoorAmbient = Color3.fromRGB(25, 20, 45)
-a.ShadowSoftness = 0.01                        -- razor darkness
-a.GeographicLatitude = 0                       -- neutral sun angle
-a.ExposureCompensation = -0.5                  -- under-expose for depth
+a.OutdoorAmbient = Color3.fromRGB(255, 220, 230)
+a.ShadowSoftness = 0.35                        -- blossom-soft shadows
+a.GeographicLatitude = 20                      -- low spring sun
+a.ExposureCompensation = 0.15                  -- light, dreamy over-exposure
 
 local b = Instance.new("BloomEffect", a)
 b.Enabled = true
-b.Intensity = 0.6                              -- strong star bloom
-b.Size = 3200
-b.Threshold = 0.45
+b.Intensity = 0.22                             -- delicate glow
+b.Size = 2600
+b.Threshold = 0.65
 
 local c = Instance.new("ColorCorrectionEffect", a)
-c.Brightness = 0.04
-c.Contrast = 0.55                              -- punchy nebula clouds
+c.Brightness = 0.1
+c.Contrast = 0.08                              -- very gentle
 c.Enabled = true
-c.Saturation = 0.45                            -- rich galactic color
-c.TintColor = Color3.fromRGB(120, 70, 180)     -- cool purple tint
+c.Saturation = 0.3                             -- pastel pop
+c.TintColor = Color3.fromRGB(255, 182, 193)    -- sakura-pink tint
