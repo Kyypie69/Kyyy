@@ -43,6 +43,10 @@ local Window = Library:CreateWindow{
 	Settings = Window:CreateTab{
 		Title = "Settings",
 		Icon = "phosphor-sliders-bold"
+	},
+	SkyChanger = Window:CreateTab{
+		Title = "Sky Changer",
+		Icon = "phosphor-sliders-bold"
 	}
 }
 
@@ -1358,3 +1362,321 @@ Tabs.Settings:CreateButton{
 		game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
 	end
 }
+
+Tabs.SkyChanger:AddButton({
+    Title = "Full Night Sky",
+    Callback = function()
+        getgenv().Kitten = 5
+        local texture = "http://www.roblox.com/asset/?id=17055447520"
+  local sky = Instance.new("Sky")
+ 
+  sky.Parent = game.Lighting
+ 
+  sky.CelestialBodiesShown = false
+  sky.SkyboxBk = texture
+  sky.SkyboxDn = texture
+  sky.SkyboxFt = texture
+  sky.SkyboxLf = texture
+  sky.SkyboxRt = texture
+  sky.SkyboxUp = texture
+    end
+  })
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Vibe Sky",
+    Callback = function()
+              getgenv().Kitten = 10
+  local Lighting = game.Lighting
+ 
+  local sky = Instance.new("Sky")
+  sky.Parent = Lighting
+  sky.CelestialBodiesShown = true
+  sky.MoonTextureId = "rbxasset://sky/moon.jpg"
+  sky.SkyboxBk = "rbxassetid://159067838"
+  sky.SkyboxDn = "rbxassetid://159067646"
+  sky.SkyboxFt = "rbxassetid://159067838"
+  sky.SkyboxLf = "rbxassetid://159067744"
+  sky.SkyboxRt = "rbxassetid://159067744"
+  sky.SkyboxUp = "rbxassetid://159067921"
+  sky.StarCount = "3000"
+  sky.SunAngularSize = "21"
+    sky.SunTextureId = "rbxasset://sky/sun.jpg"
+ 
+  local Atmosphere = Instance.new("Atmosphere")
+  Atmosphere.Parent = Lighting
+  Atmosphere.Color = Color3.new(250, 250, 250)
+    Atmosphere.Decay = Color3.new(255, 255, 255)
+ 
+  local Bloom = Instance.new("BloomEffect")
+  Bloom.Parent = Lighting
+  Bloom.Enabled = true
+  Bloom.Intensity = "0.4"
+  Bloom.Size = "24"
+    Bloom.Threshold = "0.95"
+ 
+  local Blur = Instance.new("BlurEffect")
+  Blur.Parent = Lighting
+  Blur.Enabled = true
+    Blur.Size = "1.7"
+ 
+  local DepthofField = Instance.new("DepthOfFieldEffect")
+  DepthofField.Parent = Lighting
+  DepthofField.Enabled = true
+  DepthofField.FarIntensity = "0.1"
+  DepthofField.FocusDistance = "0.05"
+  DepthofField.InFocusRadius = "39"
+    DepthofField.NearIntensity = "0.75"
+ 
+  local SunRays = Instance.new("SunRaysEffect")
+  SunRays.Parent = Lighting
+  SunRays.Enabled = true
+  SunRays.Intensity = "0.25"
+  SunRays.Spread = "1"
+ 
+  Lighting.ClockTime = "14.5"
+  Lighting.GeographicLatitude = "0"
+  Lighting.TimeOfDay = "14:30:00"
+  Lighting.ExposureCompensation = "0"
+ 
+      end    
+  })
+ 
+ 
+ 
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Black Hole",
+    Callback = function()
+        getgenv().Kitten = 5
+        local texture = "http://www.roblox.com/asset/?id=17108753749"
+  local sky = Instance.new("Sky")
+ 
+  sky.Parent = game.Lighting
+ 
+  sky.CelestialBodiesShown = false
+  sky.SkyboxBk = texture
+  sky.SkyboxDn = texture
+  sky.SkyboxFt = texture
+  sky.SkyboxLf = texture
+  sky.SkyboxRt = texture
+  sky.SkyboxUp = texture
+    end
+  })
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Neptune",
+    Callback = function()
+        getgenv().Kitten = 5
+        local texture = "http://www.roblox.com/asset/?id=17108745046"
+  local sky = Instance.new("Sky")
+ 
+  sky.Parent = game.Lighting
+ 
+  sky.CelestialBodiesShown = false
+  sky.SkyboxBk = texture
+  sky.SkyboxDn = texture
+  sky.SkyboxFt = texture
+  sky.SkyboxLf = texture
+  sky.SkyboxRt = texture
+  sky.SkyboxUp = texture
+    end
+  })
+ 
+ 
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Lofy Sky",
+    Callback = function()
+        getgenv().Kitten = 5
+  local texture = "http://www.roblox.com/asset/?id=17108732394"
+  local sky = Instance.new("Sky")
+ 
+  sky.Parent = game.Lighting
+ 
+  sky.CelestialBodiesShown = false
+  sky.SkyboxBk = texture
+  sky.SkyboxDn = texture
+  sky.SkyboxFt = texture
+  sky.SkyboxLf = texture
+  sky.SkyboxRt = texture
+  sky.SkyboxUp = texture
+    end
+  })
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Aurora Boreal",
+    Callback = function()
+        getgenv().Kitten = 5
+  local texture = "http://www.roblox.com/asset/?id=17108721907"
+  local sky = Instance.new("Sky")
+ 
+  sky.Parent = game.Lighting
+ 
+  sky.CelestialBodiesShown = false
+  sky.SkyboxBk = texture
+  sky.SkyboxDn = texture
+  sky.SkyboxFt = texture
+  sky.SkyboxLf = texture
+  sky.SkyboxRt = texture
+  sky.SkyboxUp = texture
+    end
+  })
+ 
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Red Vulkan",
+    Callback = function()
+        getgenv().Kitten = 5
+  local texture = "http://www.roblox.com/asset/?id=17108721907"
+  local sky = Instance.new("Sky")
+ 
+  sky.Parent = game.Lighting
+ 
+  sky.CelestialBodiesShown = false
+  sky.SkyboxBk = texture
+  sky.SkyboxDn = texture
+  sky.SkyboxFt = texture
+  sky.SkyboxLf = texture
+  sky.SkyboxRt = texture
+  sky.SkyboxUp = texture
+    end
+  })
+ 
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Sakura Pink Sky",
+    Callback = function()
+        local skybox = Instance.new("Sky")
+        function sakurapinksky()
+        skybox.Parent = game.Lighting
+        skybox.SkyboxBk = "http://www.roblox.com/asset/?id=271042516"
+        skybox.SkyboxDn = "http://www.roblox.com/asset/?id=271077243"
+        skybox.SkyboxFt = "http://www.roblox.com/asset/?id=271042556"
+        skybox.SkyboxLf = "http://www.roblox.com/asset/?id=271042310"
+        skybox.SkyboxRt = "http://www.roblox.com/asset/?id=271042467"
+        skybox.SkyboxUp = "http://www.roblox.com/asset/?id=271077958"
+        skybox.StarCount = 5000
+        end
+ 
+        sakurapinksky()
+    end
+  })
+ 
+ 
+ 
+ 
+  Tabs.SkyChanger:AddButton({
+    Title = "Spooky Sky",
+    Callback = function()
+              getgenv().Kitten = 10
+  imageOne = "http://www.roblox.com/asset/?id=169585459"
+  imageTwo = "http://www.roblox.com/asset/?id=169585475"
+  imageThree = "http://www.roblox.com/asset/?id=169585485"
+  imageFour = "http://www.roblox.com/asset/?id=169585502"
+  imageFive = "http://www.roblox.com/asset/?id=169585515"
+  imageSix = "http://www.roblox.com/asset/?id=169585502"
+  imageSeven = "http://www.roblox.com/asset/?id=169585485"
+  imageEight = "http://www.roblox.com/asset/?id=169585475"
+ 
+  Spooky = Instance.new("Sound", workspace)
+  Spooky.Name = "Spooky"
+  Spooky.SoundId = "rbxassetid://200519201"
+  Spooky.Volume = 0
+  Spooky.Looped = true
+  Spooky:Play()
+ 
+  Sky = Instance.new("Sky", game.Lighting)
+  Sky.SkyboxBk = imageOne
+  Sky.SkyboxDn = imageOne
+  Sky.SkyboxFt = imageOne
+  Sky.SkyboxLf = imageOne
+  Sky.SkyboxRt = imageOne
+  Sky.SkyboxUp = imageOne
+ 
+ 
+  while true do
+    Sky.SkyboxBk = imageOne
+    Sky.SkyboxDn = imageOne
+    Sky.SkyboxFt = imageOne
+    Sky.SkyboxLf = imageOne
+    Sky.SkyboxRt = imageOne
+    Sky.SkyboxUp = imageOne
+    wait(0.15)
+    Sky.SkyboxBk = imageTwo
+    Sky.SkyboxDn = imageTwo
+    Sky.SkyboxFt = imageTwo
+    Sky.SkyboxLf = imageTwo
+    Sky.SkyboxRt = imageTwo
+    Sky.SkyboxUp = imageTwo
+    wait(0.15)
+    Sky.SkyboxBk = imageThree
+    Sky.SkyboxDn = imageThree
+    Sky.SkyboxFt = imageThree
+    Sky.SkyboxLf = imageThree
+    Sky.SkyboxRt = imageThree
+    Sky.SkyboxUp = imageThree
+    wait(0.15)
+    Sky.SkyboxBk = imageFour
+    Sky.SkyboxDn = imageFour
+    Sky.SkyboxFt = imageFour
+    Sky.SkyboxLf = imageFour
+    Sky.SkyboxRt = imageFour
+    Sky.SkyboxUp = imageFour
+    wait(0.15)
+    Sky.SkyboxBk = imageFive
+    Sky.SkyboxDn = imageFive
+    Sky.SkyboxFt = imageFive
+    Sky.SkyboxLf = imageFive
+    Sky.SkyboxRt = imageFive
+    Sky.SkyboxUp = imageFive
+    wait(0.15)
+    Sky.SkyboxBk = imageSix
+    Sky.SkyboxDn = imageSix
+    Sky.SkyboxFt = imageSix
+    Sky.SkyboxLf = imageSix
+    Sky.SkyboxRt = imageSix
+    Sky.SkyboxUp = imageSix
+    wait(0.15)
+    Sky.SkyboxBk = imageSeven
+    Sky.SkyboxDn = imageSeven
+    Sky.SkyboxFt = imageSeven
+    Sky.SkyboxLf = imageSeven
+    Sky.SkyboxRt = imageSeven
+    Sky.SkyboxUp = imageSeven
+    wait(0.15)
+    Sky.SkyboxBk = imageEight
+    Sky.SkyboxDn = imageEight
+    Sky.SkyboxFt = imageEight
+    Sky.SkyboxLf = imageEight
+    Sky.SkyboxRt = imageEight
+    Sky.SkyboxUp = imageEight
+    wait(0.15)
+ 
+  end
+  local rekt = Instance.new('ColorCorrectionEffect', game.Lighting)
+  rekt.TintColor = Color3.new(155, 1, 0)
+  rekt.Brightness = 0.2
+  rekt.Contrast = 1
+  rekt.Saturation = 1
+  local topkek = Instance.new('BlurEffect', game.Lighting)
+  topkek.Size = 3
+  local bloom = Instance.new('BloomEffect', game.Lighting)
+  bloom.Intensity = 0.4
+  bloom.Size = 56
+  bloom.Threshold = 1
+ 
+           game.Lighting.TimeOfDay=0;
+            game.Lighting.Brightness=0;
+            game.Lighting.ShadowColor=Color3.new(0,0,0);
+            game.Lighting.Ambient=Color3.new(1,0,0);
+            game.Lighting.FogEnd=200;
+            game.Lighting.FogColor=Color3.new(1,0,0);
+      end    
+  })
