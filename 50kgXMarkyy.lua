@@ -1302,32 +1302,36 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 	end
 })
 
+-------------------------------------------------
+--  Galaxy re-skin (drop-in replacement)
+-------------------------------------------------
 local a = game.Lighting
-a.Ambient = Color3.fromRGB(160, 175, 190)      -- frosty blue-grey
-a.Brightness = 0.85                            -- weak winter sun
-a.ColorShift_Bottom = Color3.fromRGB(140, 155, 170)
-a.ColorShift_Top = Color3.fromRGB(220, 230, 240) -- pale icy sky
-a.EnvironmentDiffuseScale = 0.2                -- soft snow bounce
-a.EnvironmentSpecularScale = 0.7               -- bright snow glint
+a.Ambient = Color3.fromRGB(25, 15, 45)          -- deep-space indigo
+a.Brightness = 0.35                             -- dim star-light
+a.ColorShift_Bottom = Color3.fromRGB(40, 20, 70)
+a.ColorShift_Top = Color3.fromRGB(90, 40, 120)  -- nebula magenta
+a.EnvironmentDiffuseScale = 0.15                -- subtle bounce
+a.EnvironmentSpecularScale = 0.5                -- keep a little glint
 a.GlobalShadows = true
-a.OutdoorAmbient = Color3.fromRGB(170, 185, 200)
-a.ShadowSoftness = 0.1                         -- crisp, cold shadows
-a.GeographicLatitude = 60                      -- very low sun angle
-a.ExposureCompensation = -0.25                 -- slight under-exposure
+a.OutdoorAmbient = Color3.fromRGB(30, 20, 50)
+a.ShadowSoftness = 0.25                         -- softer, volumetric
+a.GeographicLatitude = 60                       -- keep low sun
+a.ExposureCompensation = -0.5                   -- under-expose for night
 
+-- Bloom → star glow
 local b = Instance.new("BloomEffect", a)
 b.Enabled = true
-b.Intensity = 0.18                             -- subtle snow sparkle
+b.Intensity = 0.35                              -- stronger halo
 b.Size = 1800
-b.Threshold = 0.75
+b.Threshold = 0.6
 
+-- Color-correction → nebula tint
 local c = Instance.new("ColorCorrectionEffect", a)
-c.Brightness = 0.06
-c.Contrast = 0.2
+c.Brightness = 0.05
+c.Contrast = 0.25
 c.Enabled = true
-c.Saturation = -0.25                           -- bleach for cold feel
-c.TintColor = Color3.fromRGB(200, 220, 255)    -- icy blue tint
-
+c.Saturation = 0.15                             -- slight punch
+c.TintColor = Color3.fromRGB(120, 60, 180)      -- galaxy purple
 
 Tabs.Settings:CreateButton{
 	Title = "Rejoin",
