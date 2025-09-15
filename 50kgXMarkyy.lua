@@ -46,7 +46,7 @@ local Window = Library:CreateWindow{
 	},
 	SkyChanger = Window:CreateTab{
 		Title = "Sky Changer",
-		Icon = "mountains"
+		Icon = "island"
 	}
 }
 
