@@ -428,41 +428,6 @@ local targetInput = Tabs.Rebirth:CreateInput("TargetRebirth", {
 		updateStats()
 	end
 })
-
---[[━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    AUTO-KILL MODULE  –  dropdown target + kill-all
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━]]--
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LP = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-
--------------------------------------------
--- state
--------------------------------------------
-local chosenPlayer = nil          -- dropdown selection
-local killAllEnabled = false
-local autoKillCon = nil           -- single-target loop
-local killAllCon  = nil           -- kill-all loop
-
--------------------------------------------
--- helpers
--------------------------------------------
-local function kill(plr)
-    if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-        LP.muscleEvent:FireServer("kill", plr.Character.Humanoid)
-        plr.Character.Humanoid.Health = 0
-    end
-end
-
-local function refreshDropdown()
-    local list = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LP then table.insert(list, p.Name) end
-    end
-    return list
-end
-
 -------------------------------------------
 -- GUI  (Misc tab)
 -------------------------------------------
@@ -660,7 +625,7 @@ Toggle:OnChanged(function(state)
 end)
 
 -- Speed Punch Button
-Tabs.Killing:CreateToggle({
+Tabs.Killing:CreateButton({
     Title = "Fast Punch",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -672,7 +637,7 @@ Tabs.Killing:CreateToggle({
 })
 
 -- Normal Punch Button
-Tabs.Killing:CreateToggle({
+Tabs.Killing:CreateButton({
     Title = "Normal Punch",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -1336,34 +1301,32 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 		game:GetService("Lighting").ClockTime = times[Value]
 	end
 })
-
-
 --------------------------------------------------------------------
 -- SUNSET LIGHTING
 --------------------------------------------------------------------
-local l = game:GetService("Lighting")
+local a = game.Lighting("Lighting")
 
 -- time-of-day → sunset
-l.ClockTime = 18.35          -- 6:20 pm
-l.GeographicLatitude = -2    -- sun almost on horizon
+a.ClockTime = 18.35          -- 6:20 pm
+a.GeographicLatitude = -2    -- sun almost on horizon
 
 -- ambient colours (warm)
-l.Ambient = Color3.fromRGB(110, 75, 60)
-l.OutdoorAmbient = Color3.fromRGB(180, 110, 80)
+a.Ambient = Color3.fromRGB(110, 75, 60)
+a.OutdoorAmbient = Color3.fromRGB(180, 110, 80)
 
 -- sun / sky
-l.Brightness = 1.6
-l.ColorShift_Top = Color3.fromRGB(255, 180, 110)   -- warm sky tint
-l.ColorShift_Bottom = Color3.fromRGB(90, 50, 40)   -- ground bounce
-l.GlobalShadows = true
-l.ShadowSoftness = 0.08
+a.Brightness = 1.6
+a.ColorShift_Top = Color3.fromRGB(255, 180, 110)   -- warm sky tint
+a.ColorShift_Bottom = Color3.fromRGB(90, 50, 40)   -- ground bounce
+a.GlobalShadows = true
+a.ShadowSoftness = 0.08
 
 -- exposure
-l.ExposureCompensation = 0.45
+a.ExposureCompensation = 0.45
 
 -- leave future lighting scales neutral
-l.EnvironmentDiffuseScale = 0
-l.EnvironmentSpecularScale = 0
+a.EnvironmentDiffuseScale = 0
+a.EnvironmentSpecularScale = 0
 
 --------------------------------------------------------------------
 -- BLOOM (gentle glow around bright spots)
