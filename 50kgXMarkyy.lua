@@ -46,7 +46,7 @@ local Window = Library:CreateWindow{
 	},
 	SkyChanger = Window:CreateTab{
 		Title = "Sky Changer",
-		Icon = "hill"
+		Icon = "mountains"
 	}
 }
 
@@ -1293,8 +1293,7 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 		"Morning",
 		"Day",
 		"Afternoon",
-		"Night",
-		"Reset"
+		"Night"
 	},
 	Multi = false,
 	Default = "Default",
@@ -1303,8 +1302,7 @@ local Dropdown = Tabs.Settings:CreateDropdown("TimeControl", {
 			["Morning"] = 2.9,
 			["Day"] = 12.9,
 			["Afternoon"] = 17.9,
-			["Night"] = 0,
-			["Reset"] = 24
+			["Night"] = 0
 		}
 		game:GetService("Lighting").ClockTime = times[Value]
 	end
@@ -1375,7 +1373,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = true
+  sky.CelestialBodiesShown = false
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1394,7 +1392,7 @@ Tabs.SkyChanger:AddButton({
  
   local sky = Instance.new("Sky")
   sky.Parent = Lighting
-  sky.CelestialBodiesShown = true
+  sky.CelestialBodiesShown = false
   sky.MoonTextureId = "rbxasset://sky/moon.jpg"
   sky.SkyboxBk = "rbxassetid://159067838"
   sky.SkyboxDn = "rbxassetid://159067646"
@@ -1458,7 +1456,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = true
+  sky.CelestialBodiesShown = false
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1478,7 +1476,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = true
+  sky.CelestialBodiesShown = false
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1500,7 +1498,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = true
+  sky.CelestialBodiesShown = false
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
@@ -1520,7 +1518,7 @@ Tabs.SkyChanger:AddButton({
  
   sky.Parent = game.Lighting
  
-  sky.CelestialBodiesShown = true
+  sky.CelestialBodiesShown = false
   sky.SkyboxBk = texture
   sky.SkyboxDn = texture
   sky.SkyboxFt = texture
