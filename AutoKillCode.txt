@@ -2213,8 +2213,8 @@ statsFolder:AddButton("Copy Statistics", function()
         statsText = statsText .. "Brawls Gained: " .. formatNumberWithCommas(brawlsGain) .. "\n"
     end
 
-local killerV2Tab = window:AddTab("Killer V2")
-killerV2Tab:AddSwitch("Auto Punch", function(state)
+local killingTab = window:AddTab("KillerV2")
+killingTab:AddSwitch("Auto Punch", function(state)
     getgenv().autopunch = state
     task.spawn(function()
         while getgenv().autopunch and LocalPlayer.Character do
@@ -2233,7 +2233,7 @@ killerV2Tab:AddSwitch("Auto Punch", function(state)
         end
     end)
 end)
-killerV2Tab:AddSwitch("Fast Punch", function(state)
+killingTab:AddSwitch("Fast Punch", function(state)
     getgenv().fastPunch = state
     task.spawn(function()
         while getgenv().fastPunch and LocalPlayer.Character do
@@ -2304,13 +2304,13 @@ local function startViewAndKill()
     end)
 end
 
-killerTab:AddButton("View & Kill Target (Auto-Restart)", function()
+killingTab:AddButton("View & Kill Target (Auto-Restart)", function()
     if not viewing then
         startViewAndKill()
     end
 end)
 
-killerTab:AddButton("Stop Viewing & Killing", function()
+killingTab:AddButton("Stop Viewing & Killing", function()
     viewing = false
     if viewLoop then
         -- no way to truly kill a spawn, so we just flag it
@@ -2318,7 +2318,7 @@ killerTab:AddButton("Stop Viewing & Killing", function()
     end
     unspectate()
 end)
-killerV2Tab:AddSwitch("Auto Kill Everyone", function(state)
+killingTab:AddSwitch("Auto Kill Everyone", function(state)
     getgenv().autoKillActive = state
     task.spawn(function()
         while getgenv().autoKillActive and LocalPlayer.Character do
@@ -2337,11 +2337,11 @@ killerV2Tab:AddSwitch("Auto Kill Everyone", function(state)
         end
     end)
 end)
-killerV2Tab:AddDropdown("Select Kill Method", {"Teleport", "Non-Teleport"}, function(method)
+killingTab:AddDropdown("Select Kill Method", {"Teleport", "Non-Teleport"}, function(method)
     getgenv().killMethod = method
     print("Kill Method set to: " .. method)
 end)
-killerV2Tab:AddDropdown("Whitelist Players", function()
+killingTab:AddDropdown("Whitelist Players", function()
     local playerNames = {LocalPlayer.Name}
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -2372,7 +2372,7 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 Players.PlayerRemoving:Connect(function() end)
-killerV2Tab:AddSwitch("Fast Kill Aura", function(state)
+killingTab:AddSwitch("Fast Kill Aura", function(state)
     getgenv().fastKillAura = state
     task.spawn(function()
         while getgenv().fastKillAura and LocalPlayer.Character do
@@ -2389,11 +2389,11 @@ killerV2Tab:AddSwitch("Fast Kill Aura", function(state)
         end
     end)
 end)
-killerV2Tab:AddLabel("---Single Kill---")
-killerV2Tab:AddTextBox("Player Username", function(name)
+killingTab:AddLabel("---Single Kill---")
+killingTab:AddTextBox("Player Username", function(name)
     getgenv().targetPlayerName = name
 end)
-killerV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
+killingTab:AddSwitch("Auto Fast Kill Player", function(state)
     getgenv().autoFastKillPlayer = state
     task.spawn(function()
         while getgenv().autoFastKillPlayer and LocalPlayer.Character and getgenv().targetPlayerName do
@@ -2409,7 +2409,7 @@ killerV2Tab:AddSwitch("Auto Fast Kill Player", function(state)
         end
     end)
 end)
-killerV2Tab:AddSwitch("Spy Player", function(state)
+killingTab:AddSwitch("Spy Player", function(state)
     getgenv().spyPlayer = state
     task.spawn(function()
         while getgenv().spyPlayer and getgenv().targetPlayerName do
@@ -2429,27 +2429,27 @@ end)
 end)
 
 local a = game.Lighting
-a.Ambient = Color3.fromRGB(90, 100, 120)       -- cool, low-level fill
-a.Brightness = 0.9                             -- a touch brighter than sunset
-a.ColorShift_Bottom = Color3.fromRGB(60, 70, 90)
-a.ColorShift_Top = Color3.fromRGB(255, 140, 110)  -- pink-orange horizon
-a.EnvironmentDiffuseScale = 0.2
-a.EnvironmentSpecularScale = 0.35
+a.Ambient = Color3.fromRGB(160, 140, 100)      -- warm sand bounce
+a.Brightness = 1.35                            -- intense sun
+a.ColorShift_Bottom = Color3.fromRGB(120, 100, 70)
+a.ColorShift_Top = Color3.fromRGB(255, 210, 150)  -- pale yellow sky
+a.EnvironmentDiffuseScale = 0.45               -- bright diffuse
+a.EnvironmentSpecularScale = 0.6               -- crisp highlights
 a.GlobalShadows = true
-a.OutdoorAmbient = Color3.fromRGB(110, 120, 140)
-a.ShadowSoftness = 0.2                         -- medium-long shadows
-a.GeographicLatitude = -25                     -- sun coming up behind
-a.ExposureCompensation = -0.2                  -- slight under-exposure
+a.OutdoorAmbient = Color3.fromRGB(180, 160, 120)
+a.ShadowSoftness = 0.05                        -- razor-sharp shadows
+a.GeographicLatitude = 15                      -- high sun
+a.ExposureCompensation = 0.3                   -- slight over-exposure
 
 local b = Instance.new("BloomEffect", a)
 b.Enabled = true
-b.Intensity = 0.25                             -- softer bloom than sunset
-b.Size = 2200
-b.Threshold = 0.6
+b.Intensity = 0.2                              -- light shimmer
+b.Size = 2000
+b.Threshold = 0.7
 
 local c = Instance.new("ColorCorrectionEffect", a)
-c.Brightness = 0.08
-c.Contrast = 0.12
+c.Brightness = 0.12
+c.Contrast = 0.25
 c.Enabled = true
-c.Saturation = 0.15                            -- gentle cool-warm pop
-c.TintColor = Color3.fromRGB(255, 200, 180)    -- soft peachy glow
+c.Saturation = -0.1                            -- slightly bleached
+c.TintColor = Color3.fromRGB(255, 200, 120)    -- dusty yellow tint
