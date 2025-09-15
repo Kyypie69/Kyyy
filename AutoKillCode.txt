@@ -2213,6 +2213,46 @@ statsFolder:AddButton("Copy Statistics", function()
         statsText = statsText .. "Brawls Gained: " .. formatNumberWithCommas(brawlsGain) .. "\n"
     end
 
+local killerV2Tab = window:AddTab("Killer V2")
+killerV2Tab:AddSwitch("Auto Punch", function(state)
+    getgenv().autopunch = state
+    task.spawn(function()
+        while getgenv().autopunch and LocalPlayer.Character do
+            local punch = LocalPlayer.Character:FindFirstChild("Punch")
+            if not punch then
+                punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+                if punch then
+                    LocalPlayer.Character.Humanoid:EquipTool(punch)
+                end
+            end
+            if punch then
+                ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+            end
+            task.wait(0.1)
+        end
+    end)
+end)
+killerV2Tab:AddSwitch("Fast Punch", function(state)
+    getgenv().fastPunch = state
+    task.spawn(function()
+        while getgenv().fastPunch and LocalPlayer.Character do
+            local punch = LocalPlayer.Character:FindFirstChild("Punch")
+            if not punch then
+                punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+                if punch then
+                    LocalPlayer.Character.Humanoid:EquipTool(punch)
+                end
+            end
+            if punch then
+                ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
+                ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
+            end
+            task.wait(0.05)
+        end
+    end)
+end)
+
 -- ===== AUTO-RESTART VIEW & KILL TARGET =======================================
 local viewing = false
 local viewLoop = nil
@@ -2277,46 +2317,6 @@ killerTab:AddButton("Stop Viewing & Killing", function()
         viewLoop = nil
     end
     unspectate()
-end)
-
-local killerV2Tab = window:AddTab("Killer V2")
-killerV2Tab:AddSwitch("Auto Punch", function(state)
-    getgenv().autopunch = state
-    task.spawn(function()
-        while getgenv().autopunch and LocalPlayer.Character do
-            local punch = LocalPlayer.Character:FindFirstChild("Punch")
-            if not punch then
-                punch = LocalPlayer.Backpack:FindFirstChild("Punch")
-                if punch then
-                    LocalPlayer.Character.Humanoid:EquipTool(punch)
-                end
-            end
-            if punch then
-                ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
-                ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
-            end
-            task.wait(0.1)
-        end
-    end)
-end)
-killerV2Tab:AddSwitch("Fast Punch", function(state)
-    getgenv().fastPunch = state
-    task.spawn(function()
-        while getgenv().fastPunch and LocalPlayer.Character do
-            local punch = LocalPlayer.Character:FindFirstChild("Punch")
-            if not punch then
-                punch = LocalPlayer.Backpack:FindFirstChild("Punch")
-                if punch then
-                    LocalPlayer.Character.Humanoid:EquipTool(punch)
-                end
-            end
-            if punch then
-                ReplicatedStorage.muscleEvent:FireServer("punch", "rightHand")
-                ReplicatedStorage.muscleEvent:FireServer("punch", "leftHand")
-            end
-            task.wait(0.05)
-        end
-    end)
 end)
 killerV2Tab:AddSwitch("Auto Kill Everyone", function(state)
     getgenv().autoKillActive = state
@@ -2427,3 +2427,29 @@ end)
     
     setclipboard(statsText)
 end)
+
+local a = game.Lighting
+a.Ambient = Color3.fromRGB(90, 100, 120)       -- cool, low-level fill
+a.Brightness = 0.9                             -- a touch brighter than sunset
+a.ColorShift_Bottom = Color3.fromRGB(60, 70, 90)
+a.ColorShift_Top = Color3.fromRGB(255, 140, 110)  -- pink-orange horizon
+a.EnvironmentDiffuseScale = 0.2
+a.EnvironmentSpecularScale = 0.35
+a.GlobalShadows = true
+a.OutdoorAmbient = Color3.fromRGB(110, 120, 140)
+a.ShadowSoftness = 0.2                         -- medium-long shadows
+a.GeographicLatitude = -25                     -- sun coming up behind
+a.ExposureCompensation = -0.2                  -- slight under-exposure
+
+local b = Instance.new("BloomEffect", a)
+b.Enabled = true
+b.Intensity = 0.25                             -- softer bloom than sunset
+b.Size = 2200
+b.Threshold = 0.6
+
+local c = Instance.new("ColorCorrectionEffect", a)
+c.Brightness = 0.08
+c.Contrast = 0.12
+c.Enabled = true
+c.Saturation = 0.15                            -- gentle cool-warm pop
+c.TintColor = Color3.fromRGB(255, 200, 180)    -- soft peachy glow
