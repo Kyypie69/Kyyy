@@ -12,7 +12,7 @@ local Window = Library:CreateWindow{
     Theme = "Viow Neon",
     MinimizeKey = Enum.KeyCode.RightControl
 }local Tabs = {
-	KILLER = Window:CreateTab{
+	Killer = Window:CreateTab{
 		Title = "Killing Machine",
 		Icon = "phosphor-users-bold"
 	}
