@@ -17,7 +17,11 @@ local Window = Library:CreateWindow{
 		Icon = "phosphor-users-bold"
 	}
 }
-        
+
+local Options = Library.Options  
+local MainSection = Tabs.Main:CreateSection("KILLING SPREE")
+local selectedSize = "2"
+
 -- ======================================================================
 --  MUSCLE LEGENDS – AUTO-KILL & SPY
 -- ======================================================================
