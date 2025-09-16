@@ -1,3 +1,21 @@
+local Library = loadstring(game:HttpGetAsync("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))()
+local SaveManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/SaveManager.luau"))()
+local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/InterfaceManager.luau"))()
+-- 🏠 Creation
+local Window = Library:CreateWindow{
+    Title = "Muscle Legends | KYY HUB",
+    SubTitle = "AI GENERATED",
+    TabWidth = 125,
+    Size = UDim2.fromOffset(600, 325),
+    Resize = false,
+    Acrylic = true,
+    Theme = "Viow Neon",
+    MinimizeKey = Enum.KeyCode.RightControl
+}local Tabs = {
+	Main = Window:CreateTab{
+		Title = "Killing Machine",
+		Icon = "phosphor-users-bold"
+        
 -- ======================================================================
 --  MUSCLE LEGENDS – AUTO-KILL & SPY
 -- ======================================================================
