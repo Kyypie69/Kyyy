@@ -12,14 +12,14 @@ local Window = Library:CreateWindow{
     Theme = "Viow Neon",
     MinimizeKey = Enum.KeyCode.RightControl
 }local Tabs = {
-	Main = Window:CreateTab{
+	KILLER = Window:CreateTab{
 		Title = "Killing Machine",
 		Icon = "phosphor-users-bold"
 	}
 }
 
 local Options = Library.Options  
-local MainSection = Tabs.Main:CreateSection("KILLING SPREE")
+local KillerSection = Tabs.Killer:CreateSection("KILLING SPREE")
 local selectedSize = "2"
 
 -- ======================================================================
@@ -120,7 +120,7 @@ end
 -- GUI controls
 ------------------------------------------------------------------------
 -- 1) Target picker dropdown
-local targetDropdown = Tabs.Main:AddDropdown("TargetDropdown", {
+local targetDropdown = Tabs.Killer:AddDropdown("TargetDropdown", {
     Title   = "Select Target",
     Values  = {},
     Default = 1,
@@ -139,19 +139,19 @@ Players.PlayerAdded:Connect(refreshDropdown)
 Players.PlayerRemoving:Connect(refreshDropdown)
 
 -- 2) Toggles
-local Toggle = Tabs.Main:CreateToggle("KillAll", {
+local Toggle = Tabs.Killer:CreateToggle("KillAll", {
     Title       = "Auto-Kill All",
     Default     = false,
     Description = "Loop-KO everyone in the server"
 }):OnChanged(function(v) if v then startKillAll() else stopKillAll() end end)
 
-local Toggle = Tabs.Main:CreateToggle("KillTarget", {
+local Toggle = Tabs.Killer:CreateToggle("KillTarget", {
     Title       = "Auto-Kill Target",
     Default     = false,
     Description = "Loop-KO selected player"
 }):OnChanged(function(v) if v then startKillTarget() else stopKillTarget() end end)
 
-local Toggle = Tabs.Main:CreateToggle("SpyPlayer", {
+local Toggle = Tabs.Killer:CreateToggle("SpyPlayer", {
     Title       = "Spy Player",
     Default     = false,
     Description = "Teleport behind + ESP on selected player"
