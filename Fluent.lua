@@ -15,6 +15,8 @@ local Window = Library:CreateWindow{
 	Main = Window:CreateTab{
 		Title = "Killing Machine",
 		Icon = "phosphor-users-bold"
+	}
+}
         
 -- ======================================================================
 --  MUSCLE LEGENDS – AUTO-KILL & SPY
