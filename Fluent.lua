@@ -120,7 +120,7 @@ end
 -- GUI controls
 ------------------------------------------------------------------------
 -- 1) Target picker dropdown
-targetDropdown = Tabs.Main:AddDropdown("TargetDropdown", {
+local targetDropdown = Tabs.Main:AddDropdown("TargetDropdown", {
     Title   = "Select Target",
     Values  = {},
     Default = 1,
@@ -139,19 +139,19 @@ Players.PlayerAdded:Connect(refreshDropdown)
 Players.PlayerRemoving:Connect(refreshDropdown)
 
 -- 2) Toggles
-Tabs.Main:AddToggle("KillAll", {
+local Toggle = Tabs.Main:CreateToggle("KillAll", {
     Title       = "Auto-Kill All",
     Default     = false,
     Description = "Loop-KO everyone in the server"
 }):OnChanged(function(v) if v then startKillAll() else stopKillAll() end end)
 
-Tabs.Main:AddToggle("KillTarget", {
+local Toggle = Tabs.Main:CreateToggle("KillTarget", {
     Title       = "Auto-Kill Target",
     Default     = false,
     Description = "Loop-KO selected player"
 }):OnChanged(function(v) if v then startKillTarget() else stopKillTarget() end end)
 
-Tabs.Main:AddToggle("SpyPlayer", {
+local Toggle = Tabs.Main:CreateToggle("SpyPlayer", {
     Title       = "Spy Player",
     Default     = false,
     Description = "Teleport behind + ESP on selected player"
