@@ -1,7 +1,6 @@
-local Fluent = loadstring(game:HttpGetAsync("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))()
+local Library = loadstring(game:HttpGetAsync("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))()
 local SaveManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/SaveManager.luau"))()
 local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/InterfaceManager.luau"))()
-
 --------------------------------------------------------------------
 -- 1.  Quick refs
 --------------------------------------------------------------------
@@ -19,7 +18,7 @@ local TrainEvent = RS:WaitForChild("Events"):WaitForChild("Training")
 --------------------------------------------------------------------
 -- 2.  Window
 --------------------------------------------------------------------
-local Window = Fluent:CreateWindow({
+local Window = Library:CreateWindow({
     Title = "Muscle Legends | KYY HUB",
     SubTitle = "Renewed Edition",
     TabWidth = 130,
