@@ -1,6 +1,6 @@
 local library = loadstring(game:HttpGet("https://pastebin.com/raw/Abg3RkND", true))()
 
-local window = library:AddWindow("Auto Race Script For Farrah By Adopt :)", {
+local window = library:AddWindow("Auto Race Script For Kym & Joy", {
     main_color = Color3.fromRGB(41, 74, 122),
     min_size = Vector2.new(450, 400),
     can_resize = false
