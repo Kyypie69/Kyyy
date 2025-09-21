@@ -176,7 +176,7 @@ local Toggle = MainTab:CreateToggle({
    Flag = "Toggle", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Value)
         local Players = game:GetService("Players")
-local whitelist = { 2523643363, 2815154822, 3706292605, 2664725473, 3884730023, 1773186022, 1992531036 } 
+local whitelist = { 8196857372, 2523643363, 2815154822, 3706292605, 2664725473, 3884730023, 1773186022, 1992531036 } 
 
 local player = game.Players.LocalPlayer
 local playerId = player.UserId
