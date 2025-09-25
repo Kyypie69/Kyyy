@@ -1,5 +1,5 @@
 local Update =  loadstring(game:HttpGet"https://you.whimper.xyz/sources/relzhub/dep/pc.lua")()
-local Library = Update:Window("Legends Of Speed")
+local Library = Update:Window("Legends Of Speed / KYY")
 local main = Library:Tab("Main", "rbxassetid://6026568198")
 local ss = Library:Tab("Auto Farm", "rbxassetid://7044284832")
 local sss = Library:Tab("Teleport", "rbxassetid://6035190846")
@@ -68,11 +68,11 @@ spawn(function()
  end)
  
  
- main:Label("Join My discord For More Info!")
+ main:Label("Follow My Account")
 
 
-main:Button("Copy Discord Link",function()
- setclipboard("https://discord.com/invite/hYmREEpSwh")
+main:Button("Copy Roblox Link",function()
+ setclipboard("https://www.roblox.com/users/2815154822/profile")
  end)
  
 
@@ -168,7 +168,8 @@ main:Slider("Jump",0,1000,50,function(v)
     ss:Dropdown("Select Location", {"City",
   "Snow City"  ,
   "Magma City" , 
-  "Legends Highway", 
+  "Legends Highway" , 
+  "Speed Jungle" ,
   "Space" , 
   "Desert"
   
@@ -179,6 +180,7 @@ main:Slider("Jump",0,1000,50,function(v)
 local orbs; 
     ss:Dropdown("Select Orbs", {"Red Orb",
   "Yellow Orb"  ,
+  "Ethereal Orb" ,
   "Gem"
   
     },false, function(value)
@@ -534,21 +536,4 @@ misc:Button("Low Server Hop",function()
     
  								
 
-cred:Button("Youtube Channel",function()
-setclipboard('https://youtube.com/@RelzBlox')
-end)
-cred:Button("Discord",function()
-setclipboard("https://discord.gg/25ms")
-end)
-
-how:Seperator("Tutorial")
-how:Label("1. Use Pet Level 1 No XP")
-how:Label("2. Turn on Yellow Orbs In Auto Farm Menu")
-how:Label("3. Don't Get About XP")
-how:Label("4. Don't Use Other Features Except Yellow Orbs")
-how:Label("5. Done")
-
-how:Seperator("Notes")
-how:Label("> Make sure your Rebirth is Odd")
-how:Label("> The Power Pet Will Return If You Disconnect")
-
+cred:Button("MARKYY x KYY",function()
