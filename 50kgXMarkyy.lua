@@ -4,7 +4,7 @@ local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercon
 -- 🏠 Creation
 local Window = Library:CreateWindow{
     Title = "Muscle Legends | KYY HUB",
-    SubTitle = "AI GENERATED",
+    SubTitle = "KYYY ON TOP",
     TabWidth = 125,
     Size = UDim2.fromOffset(600, 325),
     Resize = false,
@@ -111,7 +111,7 @@ task.spawn(function()
  
     while true do
         -- Farm de Strength (agora com 0.001s de delay)
-        for y = 1, 10 do
+        for y = 1, 20 do
             c.muscleEvent:FireServer("rep")
         end
         task.wait(0.001) -- Super rápido
