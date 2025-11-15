@@ -37,7 +37,7 @@ local Rebirths = Window:AddTab({ Title = "Rebirths", Icon = "repeat" })
 local Killer = Window:AddTab({ Title = "Killer", Icon = "skull" })
 local Shop = Window:AddTab({ Title = "Crystals", Icon = "shopping-cart" })
 local Misc = Window:AddTab({ Title = "Miscellaneous", Icon = "menu" })
-local Settings = Window:AddTab({ Title = "save", Icon = "" })
+local Settings = Window:AddTab({ Title = "Settings", Icon = "lucide-save" })
 
 Home:AddButton({
     Title = "KYYY Discord Link | Press to Copy |",
@@ -54,7 +54,7 @@ Home:AddButton({
 
 local selectedSpeed = 125
 
-Home:AddInput("SpeedInput", {
+Misc:AddInput("SpeedInput", {
 	Title = "Speed",
 	Default = "125",
 	Placeholder = "Enter Speed...",
@@ -66,7 +66,7 @@ Home:AddInput("SpeedInput", {
 	end,
 })
 
-Home:AddToggle("AutoSpeed", {
+Misc:AddToggle("AutoSpeed", {
 	Title = "Set Speed",
 	Default = false,
 	Callback = function(state)
@@ -90,7 +90,7 @@ end)
 -- Size changer
 local selectedSize = 2
 
-Home:AddInput("SizeInput", {
+Misc:AddInput("SizeInput", {
 	Title = "Size",
 	Default = "2",
 	Placeholder = "Enter Size...",
@@ -102,7 +102,7 @@ Home:AddInput("SizeInput", {
 	end,
 })
 
-Home:AddToggle("AutoSize", {
+Misc:AddToggle("AutoSize", {
 	Title = "Set Size",
 	Default = false,
 	Callback = function(state)
@@ -135,18 +135,81 @@ end
 Home:AddToggle("AntiAFK", {
 	Title = "Anti AFK",
 	Default = true,
-	Callback = function(bool)
-		antiAFKEnabled = bool
-		if bool then
-			setupAntiAFK()
-		else
-			if antiAFKConnection then
-				antiAFKConnection:Disconnect()
-				antiAFKConnection = nil
-			end
+	Callback = function()
+		local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local player = Players.LocalPlayer
+ 
+local gui = Instance.new("ScreenGui", player:FindFirstChildOfClass("PlayerGui"))
+ 
+local textLabel = Instance.new("TextLabel", gui)
+textLabel.Size = UDim2.new(0, 200, 0, 50)
+textLabel.Position = UDim2.new(0.5, -100, 0, -50)
+textLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+textLabel.Font = Enum.Font.GothamBold
+textLabel.TextSize = 20
+textLabel.BackgroundTransparency = 1
+textLabel.TextTransparency = 1
+ 
+local timerLabel = Instance.new("TextLabel", gui)
+timerLabel.Size = UDim2.new(0, 200, 0, 30)
+timerLabel.Position = UDim2.new(0.5, -100, 0, -20)
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timerLabel.Font = Enum.Font.GothamBold
+timerLabel.TextSize = 18
+timerLabel.BackgroundTransparency = 1
+timerLabel.TextTransparency = 1
+timerLabel.Text = "00:00:00"
+ 
+local startTime = tick()
+ 
+task.spawn(function()
+    while true do
+        local elapsed = tick() - startTime
+        local hours = math.floor(elapsed / 3600)
+        local minutes = math.floor((elapsed % 3600) / 60)
+        local seconds = math.floor(elapsed % 60)
+        timerLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+        task.wait(1)
+    end
+end)
+ 
+task.spawn(function()
+    while true do
+        for i = 0, 1, 0.01 do
+            textLabel.TextTransparency = 1 - i
+            timerLabel.TextTransparency = 1 - i
+            task.wait(0.015)
+        end
+        task.wait(1.5)
+        for i = 0, 1, 0.01 do
+            textLabel.TextTransparency = i
+            timerLabel.TextTransparency = i
+            task.wait(0.015)
+        end
+        task.wait(0.8)
+    end
+end)
+ 
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+    print("AFK prevention completed!")
+end)
+ 
+textLabel.Text = "ANTI AFK"
 		end
-	end,
-})
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+                            print("Cancelled the dialog.")
+                        end
+                    }
+                }
+            })
+        end
+    })
 
 -- Walk on Water
 local parts = {}
@@ -184,7 +247,7 @@ local function makePartsWalkthrough()
 	end
 end
 
-Home:AddToggle("WalkOnWater", {
+Settings:AddToggle("WalkOnWater", {
 	Title = "Walk On Water",
 	Default = false,
 	Callback = function(state)
@@ -211,7 +274,7 @@ Home:AddToggle("HidePets", {
 })
 
 -- Disable Trades
-Home:AddToggle("DisableTrades", {
+Settings:AddToggle("DisableTrades", {
 	Title = "Disable Trades",
 	Default = false,
 	Callback = function(state)
@@ -241,7 +304,7 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
 	end
 end)
 
-Home:AddToggle("InfJump", {
+Settings:AddToggle("InfJump", {
 	Title = "Infinite Jump",
 	Default = false,
 	Callback = function(state)
@@ -250,7 +313,7 @@ Home:AddToggle("InfJump", {
 })
 
 -- Noclip
-Home:AddToggle("NoClip", {
+Settings:AddToggle("NoClip", {
 	Title = "No Clip",
 	Default = false,
 	Callback = function(state)
@@ -271,7 +334,7 @@ Home:AddToggle("NoClip", {
 })
 
 -- Anti Knockback
-Home:AddToggle("AntiKnockback", {
+Killer:AddToggle("AntiKnockback", {
 	Title = "Anti Knockback",
 	Default = false,
 	Callback = function(state)
@@ -408,7 +471,7 @@ local function AddButton(text, callback)
 end
 
 --// Create UI
-AddLabel("⏱️ Session Statistics", 24)
+AddLabel("⏱️ Session Stats", 24)
 local stopwatchLabel = AddLabel("Start Time: 0d 0h 0m 0s", 18)
 local customTimerLabel = AddLabel("Timer: Not started", 18)
 
@@ -561,7 +624,7 @@ Home:AddToggle("ShowStats", {
 })
 
 -- Block Rebirths
-Home:AddButton({
+Misc:AddButton({
 	Title = "Block Rebirths",
 	Callback = function()
 		local old
@@ -576,7 +639,7 @@ Home:AddButton({
 })
 
 -- Block Trades
-Home:AddButton({
+Misc:AddButton({
 	Title = "Block Trades",
 	Callback = function()
 		game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
@@ -589,7 +652,7 @@ Home:AddButton({
 -- Header label
 Killer:AddParagraph({
 	Title = "Kill Aura",
-	Content = "All Killer features: Karma, Whitelist, Auto Kill, Targeting, View Player, Punch Mods, Anim blocking, and recovery.",
+	Content = "All Killer Features",
 })
 
 -- Core variables
@@ -622,7 +685,7 @@ end
 Killer:AddToggle("AutoGoodKarma", {
 	Title = "Auto Good Karma",
 	Default = false,
-	Description = "Touch players with more evil than good to increase their good karma.",
+	Description = "Increase Good Karma.",
 	Callback = function(state)
 		autoGoodKarma = state
 		task.spawn(function()
@@ -658,7 +721,7 @@ Killer:AddToggle("AutoGoodKarma", {
 Killer:AddToggle("AutoBadKarma", {
 	Title = "Auto Bad Karma",
 	Default = false,
-	Description = "Touch players with more good than evil to build their evil karma.",
+	Description = "Increase Evil Karma.",
 	Callback = function(state)
 		autoBadKarma = state
 		task.spawn(function()
@@ -1035,13 +1098,13 @@ local function hookResetOnCharacter(char)
 	connections.ResetDeath = humanoid.Died:Connect(function()
 		task.wait(0.5)
 		respawnPlayer()
-	end)
+	end)"
 end
 
-Killer:AddToggle("Punch_When_Dead_Combo", {
+Killer:AddToggle("Punch When Dead Combo", {
 	Title = "Punch When Dead | Combo (Protein Egg)",
 	Default = false,
-	Description = "Single toggle: NaN size, AutoPunch, Protein Egg, AntiFly, soft anti-lag, and auto-reset on death.",
+	Description = "Single toggle: NaN size, AutoPunch",
 	Callback = function(state)
 		comboActive = state
 
@@ -1082,7 +1145,7 @@ local friendWhitelistActive = false
 Killer:AddToggle("AutoWhitelistFriends", {
 	Title = "Auto Whitelist Friends",
 	Default = false,
-	Description = "Automatically whitelist your Roblox friends.",
+	Description = "Automatically Whitelist your Friends",
 	Callback = function(state)
 		friendWhitelistActive = state
 		if state then
@@ -1144,7 +1207,7 @@ Killer:AddInput("WhitelistRemove", {
 Killer:AddToggle("AutoKill", {
 	Title = "Auto Kill (Aura)",
 	Default = false,
-	Description = "Automatically touches other players to 'kill' them if applicable.",
+	Description = "Automatically 'kill' player near if applicable.",
 	Callback = function(state)
 		autoKill = state
 		task.spawn(function()
@@ -1480,7 +1543,7 @@ end
 -- Button: Remove Punch Anim (sets up blocking and override)
 Killer:AddButton({
 	Title = "Remove Punch Anim",
-	Description = "Block punch animations and override tool activation.",
+	Description = "Block punch animations",
 	Callback = function()
 		setupAnimationBlocking()
 		overrideToolActivation()
@@ -1552,7 +1615,7 @@ end
 
 Killer:AddButton({
 	Title = "Recover Punch Anim",
-	Description = "Disconnect animation blocking and restore normal behavior.",
+	Description = "Restore normal behavior.",
 	Callback = function()
 		RecoveryPunch()
 		Library:Notify({Title="Recovery", Content="Punch animation blocking removed.", Duration = 3})
@@ -2030,7 +2093,7 @@ local runFastRep = false
 local repsPerTick = 1
 
 -- Create the Fast Rep section inside your farmingTab
-local FastRepSection = farmingTab:AddSection("⚡ Fast Rep")
+local FastRepSection = Home:AddSection("Fast Rep")
 
 -- Rep Speed Dropdown (1–30)
 local RepSpeedDropdown = FastRepSection:AddDropdown("FastRep_Speed", {
@@ -2299,28 +2362,28 @@ rebirthSection:AddToggle("Farming_TeleportToMK", {
 	end,
 })
 
--- ⚡ Fast Rebirth (Veinyx UI Version)
+-- ⚡ Fast Rebirth
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = game.Players.LocalPlayer
 
 -- Section for Auto Farming / Rebirth
-local AutoRebirthSection = Rebirths:AddSection("Op Fast Rebirthing")
+local AutoRebirthSection = Home:AddSection("Fast Rebirt")
 
 AutoRebirthSection:AddToggle("Fast_Rebirth", {
 	Title = "Fast Rebirth",
-	Description = "Automatically farm strength and perform rebirths",
+	Description = "Automatically Do Fast Rebirths",
 	Default = false,
 	Callback = function(state)
 		getgenv().AutoFarming = state
 
 		if state then
-			warn("⚡ AutoFarming ACTIVADO")
+			warn("Auto Farm Start")
 
 			task.spawn(function()
 				while getgenv().AutoFarming do
 					local requiredStrength = getStrengthRequiredForRebirth()
-					print("Necesario para renacer:", requiredStrength)
+					print("Necessary only:", requiredStrength)
 
 					-- Fase de farmeo
 					unequipAllPets()
@@ -2345,13 +2408,13 @@ AutoRebirthSection:AddToggle("Fast_Rebirth", {
 						task.wait(0.1)
 					until LocalPlayer.leaderstats.Rebirths.Value > oldRebirths or not getgenv().AutoFarming
 
-					print("Renacimiento hecho. Reiniciando ciclo.")
+					print("Rebirthing")
 				end
 
-				print("🛑 AutoFarming DETENIDO")
+				print("🛑 AutoFarming Activate")
 			end)
 		else
-			warn("🛑 AutoFarming DESACTIVADO")
+			warn("🛑 AutoFarming Deactivate")
 		end
 	end,
 })
@@ -2385,8 +2448,8 @@ task.spawn(function()
 	end
 end)
 
-AutoRebirthSection:AddToggle("Auto_Eat_Egg_30", {
-	Title = "Auto Eat Egg || 30 Minutes",
+AutoRebirthSection:AddToggle("Auto Eat Egg", {
+	Title = "Auto Eat Egg | 30 Minutes",
 	Description = "Automatically eats Protein Egg every 30 minutes",
 	Default = false,
 	Callback = function(state)
@@ -2406,8 +2469,8 @@ task.spawn(function()
 	end
 end)
 
-AutoRebirthSection:AddToggle("Auto_Eat_Egg_60", {
-	Title = "Auto Eat Egg || 60 Minutes",
+AutoRebirthSection:AddToggle("Auto Eat Egg", {
+	Title = "Auto Eat Egg | 60 Minutes",
 	Description = "Automatically eats Protein Egg every 60 minutes",
 	Default = false,
 	Callback = function(state)
@@ -2746,4 +2809,5 @@ Misc:AddToggle("AutoClearInventory", {
         autoEatBoostsEnabled = state
     end
 })
+
 
