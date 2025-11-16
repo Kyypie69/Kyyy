@@ -25,7 +25,7 @@ local Window = Library:CreateWindow({
 	SubTitle = "Version 6.9 | by Markyy",
 	Size = UDim2.fromOffset(500, 335),
 	TabWidth = 150,
-	Theme = "Blurple",
+	Theme = "Crimson",
 	Acrylic = false,
 })
 
@@ -42,7 +42,7 @@ local Settings = Window:AddTab({ Title = "Settings", Icon = "lucide-save" })
 Home:AddButton({
     Title = "KYYY Discord Link | Press to Copy |",
     Callback = function()
-        setclipboard("https://discord.gg/SZQhNQpC")
+        setclipboard("https://discord.gg/u5tNN8tZcY")
         Library:Notify({
             Title = "Copied!",
             Content = "Discord link copied to clipboard.",
