@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://bytesoftware.net/roblox/desynced/library.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/NewLOSLib.lua"))()
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1014,4 +1014,5 @@ function collectGifts()
             wait(1)
         end
     end)
+
 end
