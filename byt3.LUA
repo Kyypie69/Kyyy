@@ -1,5 +1,5 @@
 -- Transfer bytelos.txt to use SilenceLib.lua
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/SilenceLib.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/SilenceLib.lua", true))()
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -74,11 +74,10 @@ local settings = {
 }
 
 -- Create main window using SilenceLib
-local window = library:AddWindow("Desynced", {
-    main_color = Color3.fromRGB(41, 74, 122),
-    min_size = Vector2.new(500, 400),
-    toggle_key = Enum.KeyCode.RightShift,
-    can_resize = true
+local window = library:AddWindow("Silence | Farming", {
+    main_color = Color3.fromRGB(138, 0, 0),
+    min_size = Vector2.new(600, 600),
+    can_resize = false
 })
 
 local function createNotification(text)
