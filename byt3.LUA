@@ -1,5 +1,5 @@
--- Transfer bytelos.txt to use SilenceLib.lua
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/SilenceLib.lua", true))()
+-- Fixed SilenceLib version with proper structure
+local SilenceLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/SilenceLib.lua"))()
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -74,7 +74,7 @@ local settings = {
 }
 
 -- Create main window using SilenceLib
-local window = library:AddWindow("Silence | Farming", {
+local window = SilenceLib:AddWindow("Silence | Farming", {
     main_color = Color3.fromRGB(138, 0, 0),
     min_size = Vector2.new(600, 600),
     can_resize = false
@@ -82,7 +82,7 @@ local window = library:AddWindow("Silence | Farming", {
 
 local function createNotification(text)
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Desynced",
+        Title = "Silence",
         Text = text,
         Duration = 3
     })
@@ -105,12 +105,13 @@ local Player_Statistics = window:AddTab("Player Statistics")
 -- Universal Tools Tab
 Universal_Tools:AddLabel("Miscellaneous")
 Universal_Tools:AddButton("Join Desynced Discord", function()
-    -- Discord join functionality
+    createNotification("Discord functionality not implemented")
 end)
 
 local safeLockToggle = false
 Universal_Tools:AddSwitch("Safe Lock", function(value)
     safeLockToggle = value
+    createNotification("Safe Lock: " .. tostring(value))
 end)
 
 Universal_Tools:AddTextBox("Enter FPS Cap", function(value)
@@ -124,6 +125,7 @@ Universal_Tools:AddLabel("Network Optimization")
 local pingStabilizer = false
 Universal_Tools:AddSwitch("Enable Ping Stabilizer", function(value)
     pingStabilizer = value
+    createNotification("Ping Stabilizer: " .. tostring(value))
 end)
 
 local connectionEnhancer = false
@@ -134,22 +136,28 @@ Universal_Tools:AddSwitch("Connection Enhancer", function(value)
     else
         enhanceConnection = false
     end
+    createNotification("Connection Enhancer: " .. tostring(value))
 end)
 
 -- Auto Farming Tab
 Auto_Farming:AddLabel("Race Farming")
 local racingMode = "Teleport"
-Auto_Farming:AddDropdown("Racing Mode", function(value)
+local racingModeDropdown = Auto_Farming:AddDropdown("Racing Mode", function(value)
     racingMode = value
+    createNotification("Racing Mode: " .. value)
 end)
+racingModeDropdown:Add("Teleport")
+racingModeDropdown:Add("Smooth")
 
 local autoFillRace = false
 Auto_Farming:AddSwitch("Auto Fill Race", function(value)
     autoFillRace = value
+    createNotification("Auto Fill Race: " .. tostring(value))
 end)
 
 Auto_Farming:AddTextBox("Race Target", function(value)
     raceTarget = tonumber(value)
+    createNotification("Race Target set to: " .. tostring(raceTarget))
 end)
 
 local enableAutoRacing = false
@@ -161,10 +169,12 @@ Auto_Farming:AddSwitch("Enable Auto Racing", function(value)
     else
         racing = false
     end
+    createNotification("Auto Racing: " .. tostring(value))
 end)
 
 Auto_Farming:AddLabel("Hoop Farming")
 Auto_Farming:AddButton("Clear Hoops", function()
+    createNotification("Clearing hoops...")
     -- Clear hoops functionality
 end)
 
@@ -177,6 +187,7 @@ Auto_Farming:AddSwitch("Enable Auto Hoops", function(value)
     else
         hoop = false
     end
+    createNotification("Auto Hoops: " .. tostring(value))
 end)
 
 Auto_Farming:AddLabel("Extra Farming Options")
@@ -189,44 +200,65 @@ Auto_Farming:AddSwitch("Enable Auto Gifts", function(value)
     else
         gifts = false
     end
+    createNotification("Auto Gifts: " .. tostring(value))
 end)
 
 local autoClaimChests = false
 Auto_Farming:AddSwitch("Auto Claim Chests", function(value)
     autoClaimChests = value
+    createNotification("Auto Claim Chests: " .. tostring(value))
 end)
 
 local autoSpinWheel = false
 Auto_Farming:AddSwitch("Auto Spin Wheel", function(value)
     autoSpinWheel = value
+    createNotification("Auto Spin Wheel: " .. tostring(value))
 end)
 
 Auto_Farming:AddButton("Claim All Codes", function()
+    createNotification("Claiming all codes...")
     -- Claim codes functionality
 end)
 
 -- Primary Auto Farm Section
 Auto_Farming:AddLabel("Primary Auto Farm")
 local primaryOrb = nil
-Auto_Farming:AddDropdown("Orb Type", function(value)
+local primaryOrbDropdown = Auto_Farming:AddDropdown("Orb Type", function(value)
     primaryOrb = value
     settings.primary.orb = value
+    createNotification("Primary Orb: " .. tostring(value))
 end)
+primaryOrbDropdown:Add(Yellow_Orb)
+primaryOrbDropdown:Add(Orange_Orb)
+primaryOrbDropdown:Add(Blue_Orb)
+primaryOrbDropdown:Add(Red_Orb)
+primaryOrbDropdown:Add(Ethereal_Orb)
 
 local primaryCity = nil
-Auto_Farming:AddDropdown("Target City", function(value)
+local primaryCityDropdown = Auto_Farming:AddDropdown("Target City", function(value)
     primaryCity = value
     settings.primary.city = value
+    createNotification("Primary City: " .. tostring(value))
 end)
+primaryCityDropdown:Add(City)
+primaryCityDropdown:Add(Snow_City)
+primaryCityDropdown:Add(Magma_City)
+primaryCityDropdown:Add(Legends_Highway)
+primaryCityDropdown:Add(Speed_Jungle)
 
 local primarySpeed = nil
-Auto_Farming:AddDropdown("Collection Rate", function(value)
+local primarySpeedDropdown = Auto_Farming:AddDropdown("Collection Rate", function(value)
     primarySpeed = parseSpeed(value)
     settings.primary.speed = primarySpeed
+    createNotification("Primary Speed: " .. tostring(primarySpeed))
 end)
+for i = 8, 18 do
+    primarySpeedDropdown:Add("x" .. (i * 100) .. " Orbs")
+end
 
 Auto_Farming:AddTextBox("Orb Collection Cooldown", function(value)
     settings.primary.cooldown = tonumber(value) or 1
+    createNotification("Primary Cooldown: " .. tostring(settings.primary.cooldown))
 end)
 
 local primaryAutoFarm = false
@@ -236,62 +268,13 @@ Auto_Farming:AddSwitch("Enable Auto Orb Collection", function(value)
     if value then
         primaryFarm()
     end
+    createNotification("Primary Auto Farm: " .. tostring(value))
 end)
-
--- Secondary Auto Farm Section
-Auto_Farming:AddLabel("Secondary Auto Farm")
-local secondaryOrb = nil
-Auto_Farming:AddDropdown("Orb Type", function(value)
-    secondaryOrb = value
-    settings.secondary.orb = value
-end)
-
-local secondaryCity = nil
-Auto_Farming:AddDropdown("Target City", function(value)
-    secondaryCity = value
-    settings.secondary.city = value
-end)
-
-local secondarySpeed = nil
-Auto_Farming:AddDropdown("Collection Rate", function(value)
-    secondarySpeed = parseSpeed(value)
-    settings.secondary.speed = secondarySpeed
-end)
-
-Auto_Farming:AddTextBox("Orb Collection Cooldown", function(value)
-    settings.secondary.cooldown = tonumber(value) or 1
-end)
-
-local secondaryAutoFarm = false
-Auto_Farming:AddSwitch("Enable Auto Orb Collection", function(value)
-    secondaryAutoFarm = value
-    settings.secondary.active = value
-    if value then
-        secondaryFarm()
-    end
-end)
-
--- Pet Hatching Tab (sample sections)
-Pet_Hatching:AddLabel("Basic Pets")
-local selectedBasicPet = nil
-Pet_Hatching:AddDropdown("Select Basic Pet", function(value)
-    selectedBasicPet = value
-end)
-
-local autoHatchBasic = false
-Pet_Hatching:AddSwitch("Auto Hatch Basic", function(value)
-    autoHatchBasic = value
-    if value and selectedBasicPet then
-        hatchPet(selectedBasicPet)
-    end
-end)
-
--- Continue with remaining tabs and sections...
--- (Due to length, I'll provide the key function conversions)
 
 -- Helper functions
 function parseSpeed(speedString)
-    return tonumber(speedString:match("x(%d+)")) or 1000
+    local speed = tonumber(speedString:match("x(%d+)")) or 1000
+    return speed
 end
 
 function formatNumber(num)
@@ -316,68 +299,89 @@ function enhanceNetwork()
     enhanceConnection = true
     coroutine.wrap(function()
         while enhanceConnection do
-            game:GetService("NetworkClient"):SetOutgoingKBPSLimit(999999)
-            game:GetService("NetworkClient"):SetIncomingKBPSLimit(999999)
+            pcall(function()
+                game:GetService("NetworkClient"):SetOutgoingKBPSLimit(999999)
+                game:GetService("NetworkClient"):SetIncomingKBPSLimit(999999)
+            end)
             wait(1)
         end
     end)()
 end
 
 function collectHoops()
-    if hoop then
-        for _, hoopObj in ipairs(workspace:FindFirstChild("Hoops"):GetChildren()) do
-            firetouchinterest(LocalPlayer.Character, hoopObj, 0)
-            wait()
-            firetouchinterest(LocalPlayer.Character, hoopObj, 1)
-            wait()
+    coroutine.wrap(function()
+        while hoop and enableAutoHoops do
+            pcall(function()
+                local hoops = workspace:FindFirstChild("Hoops")
+                if hoops then
+                    for _, hoopObj in ipairs(hoops:GetChildren()) do
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            firetouchinterest(LocalPlayer.Character.HumanoidRootPart, hoopObj, 0)
+                            wait()
+                            firetouchinterest(LocalPlayer.Character.HumanoidRootPart, hoopObj, 1)
+                            wait(0.1)
+                        end
+                    end
+                end
+            end)
+            wait(1)
         end
-    end
+    end)()
 end
 
 function collectGifts()
-    gifts = true
     coroutine.wrap(function()
-        while gifts do
-            ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("freeGiftClaimRemote"):InvokeServer()
+        while gifts and autoGifts do
+            pcall(function()
+                ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("freeGiftClaimRemote"):InvokeServer()
+            end)
             wait(1)
         end
     end)()
 end
 
 function primaryFarm()
-    if settings.primary.active then
-        coroutine.wrap(function()
-            while settings.primary.active do
+    coroutine.wrap(function()
+        while settings.primary.active do
+            pcall(function()
                 -- Primary farm logic here
-                wait(settings.primary.cooldown or 1)
-            end
-        end)()
-    end
+                -- This would need to be implemented based on your specific game mechanics
+                createNotification("Farming primary orbs...")
+            end)
+            wait(settings.primary.cooldown or 1)
+        end
+    end)()
 end
 
-function secondaryFarm()
-    if settings.secondary.active then
-        coroutine.wrap(function()
-            while settings.secondary.active do
-                -- Secondary farm logic here
-                wait(settings.secondary.cooldown or 1)
-            end
-        end)()
-    end
+function handleRacing()
+    coroutine.wrap(function()
+        while racing and enableAutoRacing do
+            pcall(function()
+                -- Racing logic here
+                createNotification("Handling racing...")
+            end)
+            wait(1)
+        end
+    end)()
 end
 
 function hatchPet(petType)
     coroutine.wrap(function()
-        while autoHatchBasic do
-            local petShopFolder = ReplicatedStorage:WaitForChild("cPetShopFolder"):WaitForChild(petType)
-            ReplicatedStorage:WaitForChild("cPetShopRemote"):InvokeServer(unpack({petType}))
+        while autoHatchBasic and selectedBasicPet do
+            pcall(function()
+                local petShopFolder = ReplicatedStorage:WaitForChild("cPetShopFolder")
+                if petShopFolder:FindFirstChild(selectedBasicPet) then
+                    ReplicatedStorage:WaitForChild("cPetShopRemote"):InvokeServer(selectedBasicPet)
+                    createNotification("Hatching " .. selectedBasicPet)
+                end
+            end)
             wait(1)
         end
     end)()
 end
 
 -- Initialize the script
-createNotification("The script for Legends Of Speed has been successfully loaded.")
+createNotification("Silence Farming script loaded successfully!")
 
 -- Make the window visible
-window:FormatWindows()
+SilenceLib:FormatWindows()
