@@ -1,0 +1,337 @@
+-- Muscle Legends Auto Farm Kill Script
+-- Fixed auto-killing, kill counter, position locking
+
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Debris = game:GetService("Debris")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local Player = Players.LocalPlayer
+local PlaceId = 3623096087
+
+-- Configuration
+local CONFIG = {
+    HOP_INTERVAL = 40, -- seconds between server hops
+    JUMP_INTERVAL = 300, -- seconds between jumps
+    KILL_COOLDOWN = 0.1, -- seconds between kill attempts
+    TELEPORT_OFFSET = CFrame.new(0, 5, 0), -- offset from target
+    AUTO_PUNCH_REMOTE = "FastPunch", -- remote event name for auto punch
+    ATTACK_REMOTE = "AttackPlayer" -- remote event name for attacking
+}
+
+-- Kill counter
+local killData = {
+    currentSession = 0,
+    totalKills = 0,
+    hopStartTime = tick(),
+    hopCount = 0
+}
+
+-- GUI Setup
+local function createKillCounterGUI()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "KillCounterGUI"
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 200, 0, 120)
+    MainFrame.Position = UDim2.new(0, 10, 0, 10)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    MainFrame.BackgroundTransparency = 0.3
+    MainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    MainFrame.BorderSizePixel = 2
+    MainFrame.Parent = ScreenGui
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = MainFrame
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Size = UDim2.new(1, 0, 0, 25)
+    TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = "MUSCLE LEGENDS FARM"
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    TitleLabel.TextScaled = true
+    TitleLabel.Font = Enum.Font.SourceSansBold
+    TitleLabel.Parent = MainFrame
+    
+    local KillCounter = Instance.new("TextLabel")
+    KillCounter.Name = "KillCounter"
+    KillCounter.Size = UDim2.new(1, 0, 0, 25)
+    KillCounter.Position = UDim2.new(0, 0, 0, 25)
+    KillCounter.BackgroundTransparency = 1
+    KillCounter.Text = "Kills: 0"
+    KillCounter.TextColor3 = Color3.fromRGB(255, 255, 255)
+    KillCounter.TextScaled = true
+    KillCounter.Font = Enum.Font.SourceSans
+    KillCounter.Parent = MainFrame
+    
+    local HopCountdown = Instance.new("TextLabel")
+    HopCountdown.Name = "HopCountdown"
+    HopCountdown.Size = UDim2.new(1, 0, 0, 25)
+    HopCountdown.Position = UDim2.new(0, 0, 0, 50)
+    HopCountdown.BackgroundTransparency = 1
+    HopCountdown.Text = "Next Hop: 40s"
+    HopCountdown.TextColor3 = Color3.fromRGB(255, 255, 0)
+    HopCountdown.TextScaled = true
+    HopCountdown.Font = Enum.Font.SourceSans
+    HopCountdown.Parent = MainFrame
+    
+    local Status = Instance.new("TextLabel")
+    Status.Name = "Status"
+    Status.Size = UDim2.new(1, 0, 0, 20)
+    Status.Position = UDim2.new(0, 0, 0, 75)
+    Status.BackgroundTransparency = 1
+    Status.Text = "Status: Idle"
+    Status.TextColor3 = Color3.fromRGB(0, 255, 0)
+    Status.TextScaled = true
+    Status.Font = Enum.Font.SourceSans
+    Status.Parent = MainFrame
+    
+    local TotalKills = Instance.new("TextLabel")
+    TotalKills.Name = "TotalKills"
+    TotalKills.Size = UDim2.new(1, 0, 0, 20)
+    TotalKills.Position = UDim2.new(0, 0, 0, 95)
+    TotalKills.BackgroundTransparency = 1
+    TotalKills.Text = "Total: 0"
+    TotalKills.TextColor3 = Color3.fromRGB(0, 255, 255)
+    TotalKills.TextScaled = true
+    TotalKills.Font = Enum.Font.SourceSans
+    TotalKills.Parent = MainFrame
+    
+    return ScreenGui, KillCounter, HopCountdown, Status, TotalKills
+end
+
+local gui, killCounterLabel, hopCountdownLabel, statusLabel, totalKillsLabel = createKillCounterGUI()
+
+-- Update GUI
+local function updateGUI()
+    if killCounterLabel then
+        killCounterLabel.Text = "Kills: " .. killData.currentSession
+    end
+    if totalKillsLabel then
+        totalKillsLabel.Text = "Total: " .. killData.totalKills
+    end
+end
+
+-- Update countdown
+spawn(function()
+    while wait(1) do
+        local timeElapsed = tick() - killData.hopStartTime
+        local timeRemaining = math.max(0, CONFIG.HOP_INTERVAL - timeElapsed)
+        
+        if hopCountdownLabel then
+            hopCountdownLabel.Text = "Next Hop: " .. math.ceil(timeRemaining) .. "s"
+        end
+    end
+end)
+
+-- Server Hop Function
+local function HopServer()
+    killData.hopCount = killData.hopCount + 1
+    killData.hopStartTime = tick()
+    killData.currentSession = 0
+    
+    if statusLabel then
+        statusLabel.Text = "Status: Hopping..."
+    end
+    
+    local Success, Servers = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")).data
+    end)
+
+    if Success and Servers then
+        for _, v in pairs(Servers) do
+            if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(PlaceId, v.id, Player)
+                return
+            end
+        end
+    end
+    
+    TeleportService:Teleport(PlaceId, Player)
+end
+
+-- Find valid attack remotes
+local function getAttackRemotes()
+    local remotes = {}
+    
+    -- Try different remote names for auto punch
+    local possiblePunchNames = {CONFIG.AUTO_PUNCH_REMOTE, "FastPunch", "AutoPunch", "Punch", "Click"}
+    for _, name in pairs(possiblePunchNames) do
+        local remote = ReplicatedStorage:FindFirstChild(name)
+        if remote and remote:IsA("RemoteEvent") then
+            remotes.punch = remote
+            break
+        end
+    end
+    
+    -- Try different remote names for attack
+    local possibleAttackNames = {CONFIG.ATTACK_REMOTE, "AttackPlayer", "Attack", "Combat"}
+    for _, name in pairs(possibleAttackNames) do
+        local remote = ReplicatedStorage:FindFirstChild(name)
+        if remote and remote:IsA("RemoteEvent") then
+            remotes.attack = remote
+            break
+        end
+    end
+    
+    return remotes
+end
+
+-- Auto Kill Function with position locking
+local function autoKill(targetPlayer)
+    if not Player.Character or not targetPlayer.Character then return end
+    
+    local myHumanoid = Player.Character:FindFirstChildOfClass("Humanoid")
+    local myRoot = Player.Character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local targetHumanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+    
+    if not myHumanoid or not myRoot or not targetRoot or not targetHumanoid then return end
+    if targetHumanoid.Health <= 0 then return end
+    
+    -- Set status
+    if statusLabel then
+        statusLabel.Text = "Status: Attacking " .. targetPlayer.Name
+    end
+    
+    -- Lock position above target
+    local targetPosition = targetRoot.Position
+    local lockedPosition = targetPosition + Vector3.new(0, 10, 0)
+    
+    -- Teleport to locked position
+    myRoot.CFrame = CFrame.new(lockedPosition)
+    
+    -- Get attack remotes
+    local remotes = getAttackRemotes()
+    
+    -- Auto punch and attack
+    local success, err = pcall(function()
+        -- Auto punch first
+        if remotes.punch then
+            remotes.punch:FireServer()
+        end
+        
+        -- Then attack player
+        if remotes.attack then
+            remotes.attack:FireServer(targetPlayer.Character)
+        end
+        
+        -- Alternative: try direct combat if remotes fail
+        if not remotes.attack and not remotes.punch then
+            -- Try to damage by proximity or other methods
+            local combatSuccess = pcall(function()
+                -- Some games use magnitude-based damage
+                if (myRoot.Position - targetRoot.Position).Magnitude < 15 then
+                    -- Try to activate any equipped tools
+                    for _, tool in pairs(Player.Character:GetChildren()) do
+                        if tool:IsA("Tool") and tool:FindFirstChild("RemoteEvent") then
+                            tool.RemoteEvent:FireServer(targetPlayer.Character)
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+    
+    if success then
+        -- Check if target died
+        task.wait(0.1)
+        if targetHumanoid.Health <= 0 then
+            killData.currentSession = killData.currentSession + 1
+            killData.totalKills = killData.totalKills + 1
+            updateGUI()
+            return true
+        end
+    else
+        warn("Error attacking player: ", err)
+    end
+    
+    return false
+end
+
+-- Character Added Handler
+local function OnCharacterAdded(Char)
+    local Humanoid = Char:WaitForChild("Humanoid")
+    local Root = Char:WaitForChild("HumanoidRootPart")
+
+    -- Set super speed and jump
+    Humanoid.WalkSpeed = math.huge
+    Humanoid.JumpPower = math.huge
+
+    -- Auto kill loop
+    spawn(function()
+        while Char.Parent and Humanoid.Health > 0 do
+            local targetFound = false
+            
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetHumanoid = plr.Character:FindFirstChildOfClass("Humanoid")
+                    
+                    if targetHumanoid and targetHumanoid.Health > 0 then
+                        targetFound = true
+                        
+                        -- Attempt to kill target
+                        local killed = autoKill(plr)
+                        
+                        -- Wait if successful kill, otherwise continue
+                        if killed then
+                            task.wait(CONFIG.KILL_COOLDOWN)
+                        end
+                    end
+                end
+            end
+            
+            if not targetFound then
+                if statusLabel then
+                    statusLabel.Text = "Status: Searching..."
+                end
+                task.wait(0.5)
+            end
+            
+            task.wait(0.05) -- Small delay to prevent lag
+        end
+    end)
+end
+
+-- Auto server hop
+spawn(function()
+    while task.wait(CONFIG.HOP_INTERVAL) do
+        HopServer()
+    end
+end)
+
+-- Auto jump to prevent AFK
+spawn(function()
+    while task.wait(CONFIG.JUMP_INTERVAL) do
+        if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+            local humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
+            humanoid.Jump = true
+        end
+    end
+end)
+
+-- Connect character events
+if Player.Character then 
+    OnCharacterAdded(Player.Character) 
+end
+Player.CharacterAdded:Connect(OnCharacterAdded)
+
+-- Initial GUI update
+updateGUI()
+
+print("=== MUSCLE LEGENDS FARM KILL LOADED ===")
+print("Features:")
+print("- Auto kill players using auto punch")
+print("- Kill counter with session and total stats")
+print("- Position locking above targets")
+print("- Server hop every " .. CONFIG.HOP_INTERVAL .. " seconds")
+print("- Auto jump every " .. CONFIG.JUMP_INTERVAL .. " seconds")
+print("- Status display and countdown timer")
+print("===========================================")
