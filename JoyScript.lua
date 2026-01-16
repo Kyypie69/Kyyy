@@ -1,4 +1,4 @@
-local Material = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/LosV2Lib.lua  "))()
+local Material = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/LosV2Lib.lua"))()
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -7,101 +7,101 @@ local thumbType = Enum.ThumbnailType.HeadShot
 local thumbSize = Enum.ThumbnailSize.Size420x420
 local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
 
+-- PINK-THEMED NOTIFICATIONS
 game:GetService("StarterGui"):SetCore("SendNotification",{  
-    Title = "JOY HUB",     
-    Text = "Welcome",
+    Title = "🌺 JOY 🌺",     
+    Text = "Welcome!",
     Icon = "",
     Duration = 3,
-    Color = "Success"
+    Color = "DarkPink"
 })
 
 wait(3)
 
 game:GetService("StarterGui"):SetCore("SendNotification",{  
-    Title = "Hello",     
+    Title = "Hello ✨",     
     Text = player.Name,
     Icon = content,
     Duration = 2,
-    Color = "Info"
+    Color = "DarkPink"
 })
 
-wait(1)
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Joy HUB", 
-    Text = "Script Loaded..", 
-    Duration = 6
-})
+wait(3)
 
-wait(5)
+local windowTitle = "🌺 JOY 🌺 - Legends Of Speed"
 
 local X = Material.Load({
-    Title = "🌺 JOY 🌺 - Legends Of Speed",
+    Title = windowTitle,
     Style = 3,
-    SizeX = 500,
-    SizeY = 300,
+    SizeX = 320,
+    SizeY = 250,
     Theme = "DarkPink",
     ColorOverrides = {
-        MainFrame = Color3.fromRGB(255, 20, 147), -- Bright hot pink
-        Glow = Color3.fromRGB(255, 105, 180), -- Secondary pink glow
-        GlowIntensity = 0.8, -- Adjust glow strength
+        MainFrame = Color3.fromRGB(255, 20, 147),
+        Glow = Color3.fromRGB(255, 105, 180),
+        GlowIntensity = 0.8,
     }
 })
 
--- Create all tabs
-local mainTab = X.New({
-    Title = "Main"
-})
+-- DISABLE DRAGGING ON TITLE BAR (BUT KEEP MINIMIZE BUTTON WORKING)
+spawn(function()
+    wait(1) -- Wait for GUI to fully initialize
+    local coreGui = game:GetService("CoreGui")
+    for _, gui in pairs(coreGui:GetChildren()) do
+        if gui.Name == windowTitle and gui:FindFirstChild("MainFrame") then
+            local mainFrame = gui.MainFrame
+            if mainFrame:FindFirstChild("TitleBar") then
+                local titleBar = mainFrame.TitleBar
+                -- The title text button is what handles dragging
+                local titleText = titleBar:FindFirstChild("Title")
+                if titleText and titleText:IsA("TextButton") then
+                    -- Disable the title text button to prevent dragging
+                    titleText.Active = false
+                end
+            end
+            break
+        end
+    end
+end)
 
-local farmTab = X.New({
-    Title = "Auto Farm"
-})
-
-local teleportTab = X.New({
-    Title = "Teleport"
-})
-
-local raceTab = X.New({
-    Title = "Race"
-})
-
-local crystalTab = X.New({
-    Title = "Crystal"
-})
-
-local miscTab = X.New({
-    Title = "Misc"
-})
-
-local creditsTab = X.New({
-    Title = "Credits"
-})
+local mainTab = X.New({Title = "Main"})
+local farmTab = X.New({Title = "Auto Farm"})
+local teleportTab = X.New({Title = "Teleport"})
+local raceTab = X.New({Title = "Race"})
+local crystalTab = X.New({Title = "Crystal"})
+local miscTab = X.New({Title = "Misc"})
+local creditsTab = X.New({Title = "Credits"})
 
 -- MAIN TAB
-mainTab.Label({
-    Text = "Main Features"
-})
+mainTab.Label({Text = "Main Features"})
 
+-- FIXED: Claim All Chest functionality
 mainTab.Button({
-    Text = "Claim All Chest [Coming Soon]",
+    Text = "Claim All Chest",
     Callback = function()
-        print("Claim All Chest - Coming Soon")
-    end
-})
-
-mainTab.Toggle({
-    Text = "Auto Rebirth",
-    Callback = function(Value)
-        _G.Rebirth = Value
-        if Value then
-            spawn(function()
-                while _G.Rebirth do
-                    wait()
-                    game.ReplicatedStorage.rEvents.rebirthEvent:FireServer("rebirthRequest")
+        local chests = workspace:FindFirstChild("Chests") or workspace:FindFirstChild("chests")
+        if chests then
+            for _, chest in pairs(chests:GetChildren()) do
+                if chest:IsA("BasePart") then
+                    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("chestEvent"):FireServer("collectChest", chest.Name)
+                    wait(0.1)
                 end
-            end)
+            end
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Chests",     
+                Text = "Claimed all available chests!",
+                Duration = 2,
+                Color = "Pink"
+            })
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",     
+                Text = "No chests found!",
+                Duration = 2,
+                Color = "Pink"
+            })
         end
-    end,
-    Enabled = false
+    end
 })
 
 mainTab.Button({
@@ -118,23 +118,8 @@ mainTab.Button({
     end
 })
 
-mainTab.Toggle({
-    Text = "Spam Chat (Joy Hub)",
-    Callback = function(Value)
-        _G.Chat = Value
-        if Value then
-            spawn(function()
-                while _G.Chat do
-                    wait(1)
-                    game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer("Joy On Top", "All")
-                end
-            end)
-        end
-    end,
-    Enabled = false
-})
+-- REMOVED: Spam Chat toggle as requested
 
--- Player List for Teleport
 local playerList = {}
 for i,v in pairs(game:GetService("Players"):GetPlayers()) do
     if v ~= player then
@@ -173,9 +158,7 @@ mainTab.Slider({
 })
 
 -- AUTO FARM TAB
-farmTab.Label({
-    Text = "Auto Farm Settings"
-})
+farmTab.Label({Text = "Auto Farm"})
 
 local selectedOrb = ""
 local selectedFarmLocation = "City"
@@ -185,7 +168,7 @@ farmTab.Dropdown({
     Callback = function(Value)
         selectedOrb = Value
     end,
-    Options = {"Red Orbs", "Yellow Orbs", "Gems", "Hoops", "Ethereal Orbs"}
+    Options = {"Red Orbs", "Blue Orbs", "Orange Orbs", "Yellow Orbs", "Ethereal Orbs", "Gems"}
 })
 
 farmTab.Dropdown({
@@ -193,7 +176,21 @@ farmTab.Dropdown({
     Callback = function(Value)
         selectedFarmLocation = Value
     end,
-    Options = {"City", "Snow City", "Magma City", "Jungle City", "Speed City"}
+    Options = {"City", "Snow City", "Magma City", "Speed Jungle"}
+})
+
+-- NEW: Hide Frames Toggle
+farmTab.Toggle({
+    Text = "Hide Frames",
+    Callback = function(Value)
+        local rSto = game:GetService("ReplicatedStorage")
+        for _, obj in pairs(rSto:GetChildren()) do
+            if obj.Name:match("Frame$") then
+                obj.Visible = not Value
+            end
+        end
+    end,
+    Enabled = false
 })
 
 farmTab.Toggle({
@@ -206,20 +203,17 @@ farmTab.Toggle({
                     wait()
                     for i = 1, 50 do
                         if selectedOrb == "Red Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Blue Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Orange Orbs" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Red Orb", selectedFarmLocation)
                         elseif selectedOrb == "Yellow Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Gems" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Gem", selectedFarmLocation)
                         elseif selectedOrb == "Ethereal Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Gems" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Ethereal Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Hoops" then
-                            local children = workspace.Hoops:GetChildren()
-                            for i, child in ipairs(children) do
-                                if child.Name == "Hoop" then
-                                    child.CFrame = player.Character.HumanoidRootPart.CFrame
-                                end
-                            end
                         end
                     end
                 end
@@ -229,12 +223,123 @@ farmTab.Toggle({
     Enabled = false
 })
 
--- RACE TAB (NEW CODE)
-raceTab.Label({
-    Text = "Auto Race Settings"
+farmTab.Toggle({
+    Text = "Auto Collect Hoops",
+    Callback = function(Value)
+        _G.AutoHoops = Value
+        if Value then
+            spawn(function()
+                while _G.AutoHoops do
+                    wait(0.1)
+                    local success, err = pcall(function()
+                        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            local hoopFolder = workspace:FindFirstChild("Hoops")
+                            if hoopFolder then
+                                for _, child in ipairs(hoopFolder:GetChildren()) do
+                                    if child.Name == "Hoop" and child:IsA("BasePart") then
+                                        child.CFrame = player.Character.HumanoidRootPart.CFrame
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    if not success then
+                        warn("Hoop collection error: " .. tostring(err))
+                    end
+                end
+            end)
+        end
+    end,
+    Enabled = false
 })
 
--- Set default race method
+farmTab.Label({Text = "Target Rebirth (0 = unlimited)"})
+
+_G.TargetRebirth = 0
+
+farmTab.TextField({
+    Text = "Enter Target Rebirth",
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num and num >= 0 then
+            _G.TargetRebirth = math.floor(num)
+            print("Target Rebirth set to: " .. _G.TargetRebirth)
+        else
+            _G.TargetRebirth = 0
+            print("Invalid input, set to 0 (unlimited)")
+        end
+    end,
+})
+
+farmTab.Toggle({
+    Text = "Auto Rebirth (Target)",
+    Callback = function(Value)
+        _G.AutoRebirthTarget = Value
+        if Value then
+            _G.AutoRebirthNormal = false
+            spawn(function()
+                while _G.AutoRebirthTarget do
+                    wait(0.5)
+                    if _G.TargetRebirth > 0 then
+                        local leaderstats = player:FindFirstChild("leaderstats")
+                        if leaderstats then
+                            local rebirths = leaderstats:FindFirstChild("Rebirths") or leaderstats:FindFirstChild("Rebirth")
+                            if rebirths then
+                                local currentRebirths = tonumber(rebirths.Value) or 0
+                                if currentRebirths >= _G.TargetRebirth then
+                                    _G.AutoRebirthTarget = false
+                                    game:GetService("StarterGui"):SetCore("SendNotification",{  
+                                        Title = "Auto Rebirth",     
+                                        Text = "Target reached: " .. currentRebirths .. " rebirths!",
+                                        Duration = 3,
+                                        Color = "Pink"
+                                    })
+                                    print("Auto Rebirth stopped: Target " .. _G.TargetRebirth .. " reached")
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    local success = pcall(function()
+                        game.ReplicatedStorage.rEvents.rebirthEvent:FireServer("rebirthRequest")
+                    end)
+                    if not success then
+                        warn("Rebirth event failed")
+                        wait(1)
+                    end
+                end
+            end)
+        end
+    end,
+    Enabled = false
+})
+
+farmTab.Toggle({
+    Text = "Auto Rebirth (Normal)",
+    Callback = function(Value)
+        _G.AutoRebirthNormal = Value
+        if Value then
+            _G.AutoRebirthTarget = false
+            spawn(function()
+                while _G.AutoRebirthNormal do
+                    wait(0.5)
+                    local success = pcall(function()
+                        game.ReplicatedStorage.rEvents.rebirthEvent:FireServer("rebirthRequest")
+                    end)
+                    if not success then
+                        warn("Rebirth event failed")
+                        wait(1)
+                    end
+                end
+            end)
+        end
+    end,
+    Enabled = false
+})
+
+-- RACE TAB
+raceTab.Label({Text = "Auto Race Settings"})
+
 _G.RaceMethod = "Teleport"
 
 raceTab.Dropdown({
@@ -257,7 +362,6 @@ raceTab.Toggle({
                     wait()
                     local raceTimer = game:GetService("ReplicatedStorage"):FindFirstChild("raceTimer")
                     local raceStarted = game:GetService("ReplicatedStorage"):FindFirstChild("raceStarted")
-                    
                     if _G.RaceMethod == "Teleport" then
                         local char = game.Players.LocalPlayer.Character
                         if char and char:FindFirstChild("HumanoidRootPart") then
@@ -279,7 +383,6 @@ raceTab.Toggle({
                             raceFired = true
                             teleported = false
                         end
-                        
                         if raceStarted and raceStarted:IsA("BoolValue") and raceStarted.Value == true and not teleported then
                             local finishParts = workspace:GetDescendants()
                             local closestPart = nil
@@ -301,12 +404,10 @@ raceTab.Toggle({
                                 end
                             end
                         end
-                        
                         if raceStarted and raceStarted:IsA("BoolValue") and raceStarted.Value == false then
                             raceFired = false
                         end
                     end
-                    
                     wait(0.05)
                 end
             end)
@@ -333,17 +434,16 @@ raceTab.Toggle({
 })
 
 -- TELEPORT TAB
-teleportTab.Label({
-    Text = "Location Teleports"
-})
+teleportTab.Label({Text = "Location Teleports"})
 
 local locations = {
-    ["City"] = Vector3.new(-9687.1923828125, 59.072853088378906, 3096.58837890625),
-    ["Snow City"] = Vector3.new(-9677.6640625, 59.072853088378906, 3783.736572265625),
-    ["Magma City"] = Vector3.new(-11053.3837890625, 217.0328369140625, 4896.10986328125),
-    ["Legends Highway"] = Vector3.new(-13097.8583984375, 217.0328369140625, 5904.84716796875),
-    ["Space"] = Vector3.new(-336.0252380371094, 3.942866802215576, 592.1419067382812),
-    ["Desert"] = Vector3.new(2508.404296875, 14.834074974060059, 4352.73388671875)
+    ["City"] = Vector3.new(-9687.19, 59.07, 3096.59),
+    ["Snow City"] = Vector3.new(-9677.66, 59.07, 3783.74),
+    ["Magma City"] = Vector3.new(-11053.38, 217.03, 4896.11),
+    ["Legends Highway"] = Vector3.new(-13097.86, 217.03, 5904.85),
+    ["Space"] = Vector3.new(-336.03, 3.94, 592.14),
+    ["Desert"] = Vector3.new(2508.40, 14.83, 4352.73),
+    ["Speed Jungle"] = Vector3.new(-15271.71, 398.20, 5574.44, -1.00, -0.00, -0.02, -0.00, 1.00, 0.00, 0.02, 0.00, -1.00)
 }
 
 for locationName, position in pairs(locations) do
@@ -356,9 +456,7 @@ for locationName, position in pairs(locations) do
 end
 
 -- CRYSTAL TAB
-crystalTab.Label({
-    Text = "Crystal Opening"
-})
+crystalTab.Label({Text = "Crystal Opening"})
 
 local selectedCrystal = ""
 crystalTab.Dropdown({
@@ -366,7 +464,7 @@ crystalTab.Dropdown({
     Callback = function(Value)
         selectedCrystal = Value
     end,
-    Options = {"Electro Legends Crystal", "Lava Crystal", "Inferno Crystal", "Snow Crystal", "Electro Crystal", "Space Crystal", "Desert Crystal"}
+    Options = {"Jungle Crystal", "Electro Legends Crystal", "Lava Crystal", "Inferno Crystal", "Snow Crystal", "Electro Crystal", "Space Crystal", "Desert Crystal"}
 })
 
 crystalTab.Toggle({
@@ -386,9 +484,7 @@ crystalTab.Toggle({
 })
 
 -- MISC TAB
-miscTab.Label({
-    Text = "Miscellaneous Features"
-})
+miscTab.Label({Text = "Miscellaneous Features"})
 
 miscTab.Button({
     Text = "Disable Jump",
@@ -404,15 +500,72 @@ miscTab.Button({
     end
 })
 
+-- UPDATED ANTI AFK BUTTON
 miscTab.Button({
     Text = "Anti AFK",
     Callback = function()
-        local vu = game:GetService("VirtualUser")
-        game:GetService("Players").LocalPlayer.Idled:connect(function()
-            vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-            wait(1)
-            vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        local Players = game:GetService("Players")
+        local VirtualUser = game:GetService("VirtualUser")
+        local player = Players.LocalPlayer
+        
+        local gui = Instance.new("ScreenGui", player.PlayerGui)
+        
+        local textLabel = Instance.new("TextLabel", gui)
+        textLabel.Size = UDim2.new(0, 200, 0, 50)
+        textLabel.Position = UDim2.new(0.5, -100, 0, -50)
+        textLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+        textLabel.Font = Enum.Font.GothamBold
+        textLabel.TextSize = 20
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextTransparency = 1
+        
+        local timerLabel = Instance.new("TextLabel", gui)
+        timerLabel.Size = UDim2.new(0, 200, 0, 30)
+        timerLabel.Position = UDim2.new(0.5, -100, 0, -20)
+        timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        timerLabel.Font = Enum.Font.GothamBold
+        timerLabel.TextSize = 18
+        timerLabel.BackgroundTransparency = 1
+        timerLabel.TextTransparency = 1
+        timerLabel.Text = "00:00:00"
+        
+        local startTime = tick()
+        
+        task.spawn(function()
+            while true do
+                local elapsed = tick() - startTime
+                local hours = math.floor(elapsed / 3600)
+                local minutes = math.floor((elapsed % 3600) / 60)
+                local seconds = math.floor(elapsed % 60)
+                timerLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                task.wait(1)
+            end
         end)
+        
+        task.spawn(function()
+            while true do
+                for i = 0, 1, 0.01 do
+                    textLabel.TextTransparency = 1 - i
+                    timerLabel.TextTransparency = 1 - i
+                    task.wait(0.015)
+                end
+                task.wait(1.5)
+                for i = 0, 1, 0.01 do
+                    textLabel.TextTransparency = i
+                    timerLabel.TextTransparency = i
+                    task.wait(0.015)
+                end
+                task.wait(0.8)
+            end
+        end)
+        
+        player.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+            print("AFK prevention completed!")
+        end)
+        
+        textLabel.Text = "ANTI AFK"
     end
 })
 
@@ -468,14 +621,37 @@ miscTab.Button({
     end
 })
 
+-- FIXED: Destroy GUI button - now properly finds and destroys the GUI
 miscTab.Button({
     Text = "Destroy GUI",
     Callback = function()
+        -- Try to find GUI by the title name first
+        local guiName = windowTitle
         for i,v in pairs(game.CoreGui:GetChildren()) do
-            if v.Name:find("Material") then
+            if v.Name == guiName then
                 v:Destroy()
+                print("GUI destroyed successfully!")
+                return
             end
         end
+        
+        -- Fallback: Check for OldInstance global
+        if getgenv().OldInstance then
+            getgenv().OldInstance:Destroy()
+            print("GUI destroyed via OldInstance!")
+            return
+        end
+        
+        -- Last resort: Look for any ScreenGui with similar naming
+        for i,v in pairs(game.CoreGui:GetChildren()) do
+            if v:IsA("ScreenGui") and (v.Name:find("JOY") or v.Name:find("Joy")) then
+                v:Destroy()
+                print("GUI destroyed via fallback search!")
+                return
+            end
+        end
+        
+        print("Could not find GUI to destroy!")
     end
 })
 
@@ -485,7 +661,7 @@ creditsTab.Label({Text = "Discord: KYY"})
 creditsTab.Button({
     Text = "Copy Discord Link",
     Callback = function()
-        setclipboard('https://discord.gg/WMAHNafHqZ  ')
+        setclipboard('https://discord.gg/WMAHNafHqZ        ')
     end
 })
 
@@ -493,7 +669,7 @@ creditsTab.Label({Text = "Roblox: KYYY"})
 creditsTab.Button({
     Text = "Copy Roblox Profile Link",
     Callback = function()
-        setclipboard("https://www.roblox.com/users/2815154822/profile  ")
+        setclipboard("https://www.roblox.com/users/2815154822/profile        ")
     end
 })
 
