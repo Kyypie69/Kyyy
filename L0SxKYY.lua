@@ -1,5 +1,5 @@
 -- Remove trailing space from library URL
-local libraryUrl = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/LOS.LIB.lua"
+local libraryUrl = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/LOS.LIB.lua     "
 local library
 
 local success, err = pcall(function()
@@ -101,10 +101,189 @@ local loops = {
     statUpdate = nil,
     antiIdle = nil,
     connection = nil,
-    pingStabilizer = nil
+    pingStabilizer = nil,
+    hoopPopupCleaner = nil
 }
 
 local uiElements = {}
+local originalHoopProperties = {}
+local hoopPopupGui = nil
+local hoopPopupFrame = nil
+
+-- ===== HOOP POPUP REMOVAL SYSTEM =====
+
+-- Find and disable the popup GUI that shows collection numbers
+function findAndDisableHoopPopups()
+    -- Try common popup GUI names
+    local commonNames = {"Popups", "Effects", "FloatingNumbers", "DamageNumbers", "CollectionNumbers", "GamePopups", "Numbers"}
+    for _, name in ipairs(commonNames) do
+        local gui = PlayerGui:FindFirstChild(name)
+        if gui and gui:IsA("ScreenGui") then
+            hoopPopupGui = gui
+            gui.Enabled = false
+            return true
+        end
+    end
+    
+    -- Search more broadly for any ScreenGui with popup-related names
+    for _, gui in ipairs(PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            local lowerName = gui.Name:lower()
+            if lowerName:find("popup") or lowerName:find("effect") or lowerName:find("float") or lowerName:find("damage") or lowerName:find("collect") then
+                hoopPopupGui = gui
+                gui.Enabled = false
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+-- Restore popup GUI visibility
+function restoreHoopPopups()
+    if hoopPopupGui then
+        hoopPopupGui.Enabled = true
+    end
+end
+
+-- Clean up any existing popup TextLabels
+function clearExistingPopups()
+    if hoopPopupGui then
+        for _, label in ipairs(hoopPopupGui:GetDescendants()) do
+            if label:IsA("TextLabel") then
+                label:Destroy()
+            end
+        end
+    end
+    
+    -- Also search and destroy any floating TextLabels in PlayerGui
+    for _, gui in ipairs(PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            for _, label in ipairs(gui:GetDescendants()) do
+                if label:IsA("TextLabel") and label.Text:match("%+%d+") then
+                    label:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- Continuously remove popups as they appear
+function startPopupCleaner()
+    if loops.hoopPopupCleaner then loops.hoopPopupCleaner:Disconnect() end
+    
+    loops.hoopPopupCleaner = RunService.RenderStepped:Connect(function()
+        if not settings.hoops then return end
+        
+        pcall(function()
+            -- Destroy any TextLabels that appear with "+" and numbers
+            for _, gui in ipairs(PlayerGui:GetChildren()) do
+                if gui:IsA("ScreenGui") then
+                    for _, label in ipairs(gui:GetDescendants()) do
+                        if label:IsA("TextLabel") and label.Text:match("%+%d+") then
+                            label:Destroy()
+                        end
+                    end
+                end
+            end
+        end)
+    end)
+end
+
+function stopPopupCleaner()
+    if loops.hoopPopupCleaner then
+        loops.hoopPopupCleaner:Disconnect()
+        loops.hoopPopupCleaner = nil
+    end
+end
+
+-- ===== COMPREHENSIVE HOOP HIDING SYSTEM =====
+
+-- Recursively store properties for a part and all its children
+function storeHoopPartProperties(part, propertyTable)
+    if not part then return end
+    
+    if part:IsA("BasePart") then
+        propertyTable[part] = {
+            Transparency = part.Transparency,
+            CanCollide = part.CanCollide,
+            BrickColor = part.BrickColor,
+            Material = part.Material,
+            Size = part.Size,
+            LocalTransparencyModifier = part.LocalTransparencyModifier
+        }
+    elseif part:IsA("Decal") or part:IsA("Texture") then
+        propertyTable[part] = {
+            Transparency = part.Transparency
+        }
+    elseif part:IsA("ParticleEmitter") then
+        propertyTable[part] = {Enabled = part.Enabled}
+    end
+    
+    -- Recursively process children
+    for _, child in ipairs(part:GetChildren()) do
+        storeHoopPartProperties(child, propertyTable)
+    end
+end
+
+-- Store all original hoop properties
+function storeAllHoopProperties()
+    pcall(function()
+        local hoopFolder = workspace:FindFirstChild("Hoops")
+        if hoopFolder then
+            for _, hoop in ipairs(hoopFolder:GetChildren()) do
+                if hoop.Name == "Hoop" then
+                    storeHoopPartProperties(hoop, originalHoopProperties)
+                end
+            end
+        end
+    end)
+end
+
+-- Recursively hide a hoop and all its children
+function hideHoopRecursively(hoop, playerCFrame)
+    if not hoop then return end
+    
+    if hoop:IsA("BasePart") then
+        hoop.Transparency = 1
+        hoop.CanCollide = false
+        hoop.LocalTransparencyModifier = 1
+        hoop.CFrame = playerCFrame
+        
+        -- REMOVED FIRE EFFECT - no longer changing material/color
+    elseif hoop:IsA("Decal") or hoop:IsA("Texture") then
+        hoop.Transparency = 1
+    elseif hoop:IsA("ParticleEmitter") then
+        hoop.Enabled = false
+    end
+    
+    -- Process all children recursively
+    for _, child in ipairs(hoop:GetChildren()) do
+        hideHoopRecursively(child, playerCFrame)
+    end
+end
+
+-- Restore all original hoop properties
+function restoreAllHoopProperties()
+    pcall(function()
+        for object, props in pairs(originalHoopProperties) do
+            if object and object.Parent then
+                if object:IsA("BasePart") then
+                    object.Transparency = props.Transparency
+                    object.CanCollide = props.CanCollide
+                    object.BrickColor = props.BrickColor
+                    object.Material = props.Material
+                    object.LocalTransparencyModifier = props.LocalTransparencyModifier
+                elseif object:IsA("Decal") or object:IsA("Texture") then
+                    object.Transparency = props.Transparency
+                elseif object:IsA("ParticleEmitter") then
+                    object.Enabled = props.Enabled
+                end
+            end
+        end
+    end)
+end
 
 -- ===== REMOTE-BASED FARMING =====
 
@@ -161,20 +340,45 @@ function stopOrbFarm(farmKey)
     end
 end
 
+-- ===== HOOPS FARMING WITH POPUP REMOVAL =====
 function startHoopFarm()
     if loops.hoops then
         pcall(function() loops.hoops:Disconnect() end)
         loops.hoops = nil
     end
     
+    -- Store original properties on first run
+    if not next(originalHoopProperties) then
+        storeAllHoopProperties()
+    end
+    
+    -- Disable popup GUI and start cleanup loop
+    findAndDisableHoopPopups()
+    clearExistingPopups()
+    startPopupCleaner()
+    
     loops.hoops = RunService.Heartbeat:Connect(function()
         if not settings.hoops then return end
         
-        pcall(function()
-            hoopRemote:FireServer("collectHoop", "Hoop")
+        local success, err = pcall(function()
+            local character = LocalPlayer.Character
+            if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+            
+            local hoopFolder = workspace:FindFirstChild("Hoops")
+            if not hoopFolder then return end
+            
+            for _, hoop in ipairs(hoopFolder:GetChildren()) do
+                if hoop.Name == "Hoop" then
+                    hideHoopRecursively(hoop, character.HumanoidRootPart.CFrame)
+                end
+            end
         end)
         
-        wait(0.2)
+        if not success then
+            warn("Hoop collection error: " .. tostring(err))
+        end
+        
+        wait(0.1)
     end)
 end
 
@@ -183,6 +387,11 @@ function stopHoopFarm()
         pcall(function() loops.hoops:Disconnect() end)
         loops.hoops = nil
     end
+    
+    -- Restore everything
+    restoreAllHoopProperties()
+    restoreHoopPopups()
+    stopPopupCleaner()
 end
 
 -- ===== TAB CREATION =====
@@ -366,83 +575,42 @@ Script_Settings:CreateBox("Set Gravity", function(value)
     workspace.Gravity = settings.gravity
 end)
 
--- ===== CORRECTED STATISTICS SYSTEM =====
-local Player_Statistics = window:CreateTab("Player Statistics / BUG fr nw", 133249606271733)
-Player_Statistics:CreateSection("Player Stats")
-local stepsLabel = Player_Statistics:CreateLabel("Steps: Loading...")
-local rebirthsLabel = Player_Statistics:CreateLabel("Rebirths: Loading...")
-local hoopsLabel = Player_Statistics:CreateLabel("Hoops: Loading...")
-local racesLabel = Player_Statistics:CreateLabel("Races: Loading...")
+-- ===== CREDITS TAB (REPLACED PLAYER STATISTICS) =====
+local Credits = window:CreateTab("Credits", 133249606271733)
+Credits:CreateSection("Credits")
+Credits:CreateLabel("Credits to: MARKYY")
 
-Player_Statistics:CreateSection("Pet Stats")
-local equippedLabel = Player_Statistics:CreateLabel("Equipped: Loading...")
-local totalStepsLabel = Player_Statistics:CreateLabel("Total Steps: Loading...")
-local totalGemsLabel = Player_Statistics:CreateLabel("Total Gems: Loading...")
-local statusLabel = Player_Statistics:CreateLabel("Status: Initializing...")
-
-local function updateStats()
+Credits:CreateButton("Discord: Click to Copy", function()
     pcall(function()
-        statusLabel:SetText("Status: Updating...")
-        
-        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-        if leaderstats then
-            local steps = leaderstats:FindFirstChild("Steps")
-            local rebirths = leaderstats:FindFirstChild("Rebirths")
-            local hoops = leaderstats:FindFirstChild("Hoops")
-            local races = leaderstats:FindFirstChild("Races")
-            
-            if steps then stepsLabel:SetText("Steps: " .. formatNumber(steps.Value)) end
-            if rebirths then rebirthsLabel:SetText("Rebirths: " .. formatNumber(rebirths.Value)) end
-            if hoops then hoopsLabel:SetText("Hoops: " .. formatNumber(hoops.Value)) end
-            if races then racesLabel:SetText("Races: " .. formatNumber(races.Value)) end
-        else
-            statusLabel:SetText("Status: leaderstats missing!")
-        end
-        
-        if PlayerGui then
-            local gameGui = PlayerGui:FindFirstChild("gameGui")
-            if gameGui then
-                local petsMenu = gameGui:FindFirstChild("petsMenu")
-                if petsMenu then
-                    local petInfoMenu = petsMenu:FindFirstChild("petInfoMenu")
-                    if petInfoMenu then
-                        local equipped = petInfoMenu:FindFirstChild("petsLabel")
-                        local totalSteps = petInfoMenu:FindFirstChild("totalStepsLabel")
-                        local totalGems = petInfoMenu:FindFirstChild("totalGemsLabel")
-                        
-                        if equipped then equippedLabel:SetText("Equipped: " .. equipped.Text) end
-                        if totalSteps then totalStepsLabel:SetText("Total Steps: " .. totalSteps.Text) end
-                        if totalGems then totalGemsLabel:SetText("Total Gems: " .. totalGems.Text) end
-                    end
-                end
-            end
-        end
-        
-        statusLabel:SetText("Status: Updated at " .. os.date("%X"))
+        setclipboard("https://discord.gg/WMAHNafHqZ")
     end)
-end
-
-function formatNumber(num)
-    if not num or type(num) ~= "number" then return "0" end
-    if num >= 1e12 then return string.format("%.2fT", num / 1e12)
-    elseif num >= 1e9 then return string.format("%.2fB", num / 1e9)
-    elseif num >= 1e6 then return string.format("%.2fM", num / 1e6)
-    elseif num >= 1e3 then return string.format("%.2fK", num / 1e3)
-    else return tostring(math.floor(num)) end
-end
-
-Player_Statistics:CreateButton("🔄 REFRESH STATS", function()
-    statusLabel:SetText("Status: Manual refresh...")
-    updateStats()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Credits",
+        Text = "Discord link copied to clipboard!",
+        Duration = 3
+    })
 end)
 
-spawn(function()
-    wait(5)
-    updateStats()
-    while true do
-        wait(3)
-        updateStats()
-    end
+Credits:CreateButton("Roblox Profile: Click to Copy", function()
+    pcall(function()
+        setclipboard("https://www.roblox.com/users/2815154822/profile")
+    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Credits",
+        Text = "Roblox profile link copied to clipboard!",
+        Duration = 3
+    })
+end)
+
+Credits:CreateButton("TikTok: Click to Copy", function()
+    pcall(function()
+        setclipboard("https://www.tiktok.com/@markyy_0311")
+    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Credits",
+        Text = "TikTok link copied to clipboard!",
+        Duration = 3
+    })
 end)
 
 -- ===== CORE FUNCTIONS =====
@@ -510,7 +678,7 @@ function rejoinServer()
 end
 
 function getServers(placeId)
-    local url = "https://games.roblox.com/v1/games/ " .. placeId .. "/servers/Public?sortOrder=Desc&limit=100"
+    local url = "https://games.roblox.com/v1/games/      " .. placeId .. "/servers/Public?sortOrder=Desc&limit=100"
     local success, response = pcall(function()
         return HttpService:JSONDecode(game:HttpGet(url))
     end)
