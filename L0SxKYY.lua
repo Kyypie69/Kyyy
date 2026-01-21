@@ -1,1168 +1,894 @@
--- Remove trailing space from library URL
-local libraryUrl = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/LOS.LIB.lua"
-local library
-
-local success, err = pcall(function()
-    library = loadstring(game:HttpGet(libraryUrl, true))()
-end)
-
-if not success or not library then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Script Error",
-        Text = "Failed to load UI library: " .. tostring(err),
-        Duration = 5
-    })
-    return
-end
-
--- ===== SERVICES =====
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
-local Workspace = game:GetService("Workspace")
-local VirtualUser = game:GetService("VirtualUser")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local SoundService = game:GetService("SoundService")
+local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local username = player.Name
 
--- ===== PLAYER & GAME DATA =====
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+if game.CoreGui:FindFirstChild("Library") then
+    game.CoreGui:FindFirstChild("Library"):Destroy()
+end
 
--- Game remotes
-local rEvents = ReplicatedStorage:WaitForChild("rEvents")
-local petShopRemote = ReplicatedStorage:WaitForChild("cPetShopRemote")
-local petShopFolder = ReplicatedStorage:WaitForChild("cPetShopFolder")
+_G.SafeLock = false
 
--- ===== UI SETUP =====
-local window = library:CreateWindow(" 🌺JOY🌺 ", "Legends of Speed")
+local KyyfiiiLibrary = {}
 
--- ===== DATA TABLES =====
-local orbTypes = {"Yellow Orb", "Orange Orb", "Blue Orb", "Red Orb", "Ethereal Orb", "Gem", "Infernal Gem"}
-local cities = {"City", "Snow City", "Magma City", "Legends Highway", "Speed Jungle", "Space", "Desert"}
-local collectionRates = {"x800", "x900", "x1000", "x1100", "x1200", "x1300", "x1400", "x1500", "x1600", "x1800"}
+local Library = Instance.new("ScreenGui")
+Library.Name = "Library"
+Library.Parent = game.CoreGui
+Library.Enabled = true
 
--- Complete pet list
-local allPetNames = {
-    "Rainbow Speed",
-    "Rainbow Steps","1st Trail","Dragonfire","Hyperblast","Green Firecaster",
-    "Orange Falcon","White Pheonix","Blue Firecaster","Red Pheonix",
-    "Red Firecaster","Flaming Hedgehog","Yellow Squeak","Yellow Butterfly",
-    "Golden Angel","Golden Pheonix","Green Golem","Orange Pegasus",
-    "Dark Soul Birdie","Eternal Nebula Dragon","Hypersonic Pegasus",
-    "Shadows Edge Kitty","Soul Fusion Dog","Ultimate Overdrive Bunny",
-    "Swift Samurai","Golden Viking","Speedy Sensei","Maestro Dog",
-    "Divine Pegasus"
+local activeNotifications = {}
+local notificationSpacing = 10
+local notificationHeight = 90
+
+-- // BLACK, WHITE, NAVY BLUE & DEEP PURPLE THEME PALETTE
+local PALETTE = {
+    Background         = Color3.fromRGB(  0,   0,   0), -- pure black
+    Surface            = Color3.fromRGB( 20,  20,  40), -- navy blue
+    Elevated           = Color3.fromRGB( 35,  15,  35), -- deep purple
+    Accent             = Color3.fromRGB(255, 255, 255), -- white accent
+    TextPrimary        = Color3.fromRGB(  0,   0,   0), -- deep black text
+    TextSecondary      = Color3.fromRGB(  0,   0,   0), -- deep black text (for secondary)
+    TextDisabled       = Color3.fromRGB( 60,  60,  60), -- dark gray
+    Glow               = Color3.fromRGB(255, 255, 255), -- white glow
+    TextStrokeColor    = Color3.fromRGB(220, 220, 210), -- dirty white stroke
+    TextStrokeTransparency = 0.3, -- stroke transparency for glow effect
 }
 
--- ONLY BASIC PETS NOW
-local petTypes = {"basic"}
-local petDropdowns = {}
-
--- ===== SETTINGS =====
-local settings = {
-    primary = {active = false, orb = nil, city = nil, speed = 1000, cooldown = 0.5},
-    secondary = {active = false, orb = nil, city = nil, speed = 1000, cooldown = 0.5},
-    third = {active = false, orb = nil, city = nil, speed = 1000, cooldown = 0.5},
-    bullMode = false,
-    race = {enabled = false, mode = "Teleport", target = 100, autoFill = false},
-    hoops = false,
-    gifts = false,
-    chests = false,
-    spinWheel = false,
-    rebirth = {enabled = false, cooldown = 1, target = false, targetAmount = 100, targetCooldown = 1},
-    instantRebirth = {amount = 1},
-    pets = {
-        basic = {hatch = false, selected = nil}
-    },
-    walkSpeed = 50,
-    jumpPower = 50,
-    hipHeight = 0,
-    gravity = 196.2,
-    fpsCap = 120,
-    pingStabilizer = false,
-    connectionEnhancer = false,
-    antiLag = false
-}
-
--- ===== STATE & LOOPS =====
-local loops = {
-    orbFarm = {},
-    race = nil,
-    hoops = nil,
-    gifts = nil,
-    chests = nil,
-    spinWheel = nil,
-    rebirth = nil,
-    targetRebirth = nil,
-    petHatch = {},
-    statUpdate = nil,
-    connection = nil,
-    pingStabilizer = nil,
-    hoopPopupCleaner = nil
-}
-
-local uiElements = {}
-local originalHoopProperties = {}
-local hoopPopupGui = nil
-local hoopPopupFrame = nil
-
--- Storage for anti-lag original properties
-local originalProperties = {
-    particleEffects = {},
-    decals = {},
-    textures = {},
-    baseParts = {},
-    lighting = {},
-    lightingEffects = {}
-}
-
--- ===== HOOP POPUP REMOVAL SYSTEM =====
-
--- Find and disable the popup GUI that shows collection numbers
-function findAndDisableHoopPopups()
-    -- Try common popup GUI names
-    local commonNames = {"Popups", "Effects", "FloatingNumbers", "DamageNumbers", "CollectionNumbers", "GamePopups", "Numbers"}
-    for _, name in ipairs(commonNames) do
-        local gui = PlayerGui:FindFirstChild(name)
-        if gui and gui:IsA("ScreenGui") then
-            hoopPopupGui = gui
-            gui.Enabled = false
-            return true
-        end
-    end
-    
-    -- Search more broadly for any ScreenGui with popup-related names
-    for _, gui in ipairs(PlayerGui:GetChildren()) do
-        if gui:IsA("ScreenGui") then
-            local lowerName = gui.Name:lower()
-            if lowerName:find("popup") or lowerName:find("effect") or lowerName:find("float") or lowerName:find("damage") or lowerName:find("collect") then
-                hoopPopupGui = gui
-                gui.Enabled = false
-                return true
-            end
-        end
-    end
-    
-    return false
+-- Helper function to add UIStroke to text labels
+local function addTextStroke(textLabel)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = PALETTE.TextStrokeColor
+    stroke.Thickness = 2 -- Slightly thicker for better glow
+    stroke.Transparency = PALETTE.TextStrokeTransparency
+    stroke.Parent = textLabel
 end
 
--- Restore popup GUI visibility
-function restoreHoopPopups()
-    if hoopPopupGui then
-        hoopPopupGui.Enabled = true
-    end
-end
+-- // NOTIFICATION
+function KyyfiiiLibrary:createNotification(desc)
+    local Notification = Instance.new("Frame")
+    local bg = Instance.new("ImageLabel")
+    local corner1 = Instance.new("UICorner")
+    local corner2 = Instance.new("UICorner")
+    local title = Instance.new("TextLabel")
+    local descLbl = Instance.new("TextLabel")
 
--- Clean up any existing popup TextLabels
-function clearExistingPopups()
-    if hoopPopupGui then
-        for _, label in ipairs(hoopPopupGui:GetDescendants()) do
-            if label:IsA("TextLabel") then
-                label:Destroy()
-            end
-        end
-    end
-    
-    -- Also search and destroy any floating TextLabels in PlayerGui
-    for _, gui in ipairs(PlayerGui:GetChildren()) do
-        if gui:IsA("ScreenGui") then
-            for _, label in ipairs(gui:GetDescendants()) do
-                if label:IsA("TextLabel") and label.Text:match("%+%d+") then
-                    label:Destroy()
-                end
-            end
-        end
-    end
-end
+    Notification.Name = "Notification"
+    Notification.Parent = Library
+    Notification.AnchorPoint = Vector2.new(1,1)
+    Notification.BackgroundColor3 = PALETTE.Background
+    Notification.BackgroundTransparency = .1
+    Notification.BorderSizePixel = 0
+    Notification.Position = UDim2.new(1,-10,1,10)
+    Notification.Size = UDim2.new(0,235,0,82)
+    Notification.ClipsDescendants = true
 
--- Continuously remove popups as they appear
-function startPopupCleaner()
-    if loops.hoopPopupCleaner then loops.hoopPopupCleaner:Disconnect() end
-    
-    loops.hoopPopupCleaner = RunService.RenderStepped:Connect(function()
-        if not settings.hoops then return end
-        
-        pcall(function()
-            -- Destroy any TextLabels that appear with "+" and numbers
-            for _, gui in ipairs(PlayerGui:GetChildren()) do
-                if gui:IsA("ScreenGui") then
-                    for _, label in ipairs(gui:GetDescendants()) do
-                        if label:IsA("TextLabel") and label.Text:match("%+%d+") then
-                            label:Destroy()
-                        end
-                    end
-                end
-            end
-        end)
-    end)
-end
+    bg.Name = "Background"
+    bg.Parent = Notification
+    bg.BackgroundTransparency = 1
+    bg.Size = UDim2.new(1,0,1,0)
+    bg.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=123093571305491"
+    bg.ImageTransparency = .5
+    bg.ImageColor3 = PALETTE.Accent
 
-function stopPopupCleaner()
-    if loops.hoopPopupCleaner then
-        loops.hoopPopupCleaner:Disconnect()
-        loops.hoopPopupCleaner = nil
-    end
-end
+    corner1.Parent = bg
+    corner1.CornerRadius = UDim.new(0,10)
+    corner2.Parent = Notification
+    corner2.CornerRadius = UDim.new(0,10)
 
--- ===== COMPREHENSIVE HOOP HIDING SYSTEM =====
+    title.Name = "Title"
+    title.Parent = Notification
+    title.BackgroundTransparency = 1
+    title.Size = UDim2.new(1,0,0,30)
+    title.Font = Enum.Font.Jura
+    title.RichText = true
+    title.Text = "<b>NavyPurple  |</b>  Notification"
+    title.TextColor3 = PALETTE.TextPrimary
+    title.TextSize = 15
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    addTextStroke(title) -- Add dirty white stroke
+    Instance.new("UIPadding", title).PaddingLeft = UDim.new(0,10)
 
--- Recursively store properties for a part and all its children
-function storeHoopPartProperties(part, propertyTable)
-    if not part then return end
-    
-    if part:IsA("BasePart") then
-        propertyTable[part] = {
-            Transparency = part.Transparency,
-            CanCollide = part.CanCollide,
-            BrickColor = part.BrickColor,
-            Material = part.Material,
-            Size = part.Size,
-            LocalTransparencyModifier = part.LocalTransparencyModifier
-        }
-    elseif part:IsA("Decal") or part:IsA("Texture") then
-        propertyTable[part] = {
-            Transparency = part.Transparency
-        }
-    elseif part:IsA("ParticleEmitter") then
-        propertyTable[part] = {Enabled = part.Enabled}
-    end
-    
-    -- Recursively process children
-    for _, child in ipairs(part:GetChildren()) do
-        storeHoopPartProperties(child, propertyTable)
-    end
-end
+    descLbl.Name = "Description"
+    descLbl.Parent = Notification
+    descLbl.BackgroundTransparency = 1
+    descLbl.Position = UDim2.new(0,0,.37,0)
+    descLbl.Size = UDim2.new(1,0,0,40)
+    descLbl.Font = Enum.Font.Jura
+    descLbl.RichText = true
+    descLbl.Text = desc
+    descLbl.TextColor3 = PALETTE.TextPrimary
+    descLbl.TextSize = 15
+    descLbl.TextWrapped = true
+    descLbl.TextXAlignment = Enum.TextXAlignment.Left
+    descLbl.TextYAlignment = Enum.TextYAlignment.Top
+    addTextStroke(descLbl) -- Add dirty white stroke
+    local pad = Instance.new("UIPadding", descLbl)
+    pad.PaddingLeft = UDim.new(0,10)
+    pad.PaddingRight = UDim.new(0,10)
+    pad.PaddingTop = UDim.new(0,2)
 
--- Store all original hoop properties
-function storeAllHoopProperties()
-    pcall(function()
-        local hoopFolder = workspace:FindFirstChild("Hoops")
-        if hoopFolder then
-            for _, hoop in ipairs(hoopFolder:GetChildren()) do
-                if hoop.Name == "Hoop" then
-                    storeHoopPartProperties(hoop, originalHoopProperties)
-                end
-            end
+    local idx = #activeNotifications + 1
+    table.insert(activeNotifications, Notification)
+
+    local targetY = -((notificationHeight + notificationSpacing)*(idx-1)) - 10
+    TweenService:Create(Notification, TweenInfo.new(.4,Enum.EasingStyle.Sine,Enum.EasingDirection.Out),
+        {Position = UDim2.new(1,-10,1,targetY)}):Play()
+
+    task.delay(4, function()
+        local tOut = TweenService:Create(Notification, TweenInfo.new(.5),
+            {Position = UDim2.new(1,300,1,targetY)})
+        tOut:Play()
+        tOut.Completed:Wait()
+        Notification:Destroy()
+        table.remove(activeNotifications, table.find(activeNotifications, Notification))
+        for i, notif in ipairs(activeNotifications) do
+            local newY = -((notificationHeight + notificationSpacing)*(i-1)) - 10
+            TweenService:Create(notif, TweenInfo.new(.3), {Position = UDim2.new(1,-10,1,newY)}):Play()
         end
     end)
 end
 
--- Recursively hide a hoop and all its children
-function hideHoopRecursively(hoop, playerCFrame)
-    if not hoop then return end
-    
-    if hoop:IsA("BasePart") then
-        hoop.Transparency = 1
-        hoop.CanCollide = false
-        hoop.LocalTransparencyModifier = 1
-        hoop.CFrame = playerCFrame
-        
-        -- REMOVED FIRE EFFECT - no longer changing material/color
-    elseif hoop:IsA("Decal") or hoop:IsA("Texture") then
-        hoop.Transparency = 1
-    elseif hoop:IsA("ParticleEmitter") then
-        hoop.Enabled = false
-    end
-    
-    -- Process all children recursively
-    for _, child in ipairs(hoop:GetChildren()) do
-        hideHoopRecursively(child, playerCFrame)
-    end
-end
+-- // WINDOW
+function KyyfiiiLibrary:CreateWindow(Title, Description)
+    local uiOpen = true
 
--- Restore all original hoop properties
-function restoreAllHoopProperties()
-    pcall(function()
-        for object, props in pairs(originalHoopProperties) do
-            if object and object.Parent then
-                if object:IsA("BasePart") then
-                    object.Transparency = props.Transparency
-                    object.CanCollide = props.CanCollide
-                    object.BrickColor = props.BrickColor
-                    object.Material = props.Material
-                    object.LocalTransparencyModifier = props.LocalTransparencyModifier
-                elseif object:IsA("Decal") or object:IsA("Texture") then
-                    object.Transparency = props.Transparency
-                elseif object:IsA("ParticleEmitter") then
-                    object.Enabled = props.Enabled
-                end
-            end
-        end
-    end)
-end
+    local Main = Instance.new("Frame")
+    local Background = Instance.new("ImageLabel")
+    local cornerM = Instance.new("UICorner")
+    local cornerB = Instance.new("UICorner")
+    local Topbar = Instance.new("Frame")
+    local TitleLbl = Instance.new("TextLabel")
+    local Tabs = Instance.new("Frame")
+    local TabsHolder = Instance.new("ScrollingFrame")
+    local UIList = Instance.new("UIListLayout")
+    local ElementsHolder = Instance.new("Frame")
+    local UserBar = Instance.new("Frame")
+    local UserIcon = Instance.new("ImageLabel")
+    local UserText = Instance.new("TextLabel")
 
--- ===== REMOTE-BASED FARMING =====
+    Main.Name = "Main"
+    Main.Parent = Library
+    Main.AnchorPoint = Vector2.new(.5,.5)
+    Main.BackgroundColor3 = PALETTE.Background
+    Main.BackgroundTransparency = .1
+    Main.BorderSizePixel = 0
+    Main.Position = UDim2.new(.5,0,2,0)
+    Main.Size = UDim2.new(0,530,0,300)
+    Main.ClipsDescendants = true
+    Main.Active = true
 
-local orbRemote = rEvents:WaitForChild("orbEvent")
-local hoopRemote = rEvents:WaitForChild("hoopEvent")
-local raceRemote = rEvents:WaitForChild("raceEvent")
-local rebirthRemote = rEvents:WaitForChild("rebirthEvent")
+    Background.Name = "Background"
+    Background.Parent = Main
+    Background.BackgroundTransparency = 1
+    Background.Size = UDim2.new(1,0,1,0)
+    Background.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=123093571305491"
+    Background.ImageTransparency = .55
+    Background.ImageColor3 = PALETTE.Accent
+    cornerB.Parent = Background
+    cornerB.CornerRadius = UDim.new(0,10)
 
-local orbNameMap = {
-    ["Yellow Orb"] = "Yellow Orb",
-    ["Orange Orb"] = "Orange Orb", 
-    ["Blue Orb"] = "Blue Orb",
-    ["Red Orb"] = "Red Orb",
-    ["Ethereal Orb"] = "Ethereal Orb",
-    ["Gem"] = "Gem",
-    ["Infernal Gem"] = "Infernal Gem"
-}
+    cornerM.Parent = Main
+    cornerM.CornerRadius = UDim.new(0,10)
 
-local orbCollectionLoops = {
-    primary = nil,
-    secondary = nil,
-    third = nil
-}
+    Topbar.Name = "Topbar"
+    Topbar.Parent = Main
+    Topbar.BackgroundTransparency = 1
+    Topbar.Size = UDim2.new(0,530,0,30)
+    Topbar.ZIndex = 2
 
-function startOrbFarm(farmKey)
-    if orbCollectionLoops[farmKey] then
-        pcall(function() orbCollectionLoops[farmKey]:Disconnect() end)
-        orbCollectionLoops[farmKey] = nil
-    end
-    
-    local config = settings[farmKey]
-    if not config or not config.active then return end
-    
-    if not config.orb or not config.city then return end
-    
-    orbCollectionLoops[farmKey] = RunService.Heartbeat:Connect(function()
-        if not config.active then return end
-        
-        pcall(function()
-            for i = 1, math.floor(config.speed / 200) do
-                orbRemote:FireServer("collectOrb", orbNameMap[config.orb], config.city)
-                wait(0.05)
-            end
-        end)
-        
-        wait(config.cooldown)
-    end)
-end
+    TitleLbl.Name = "Title"
+    TitleLbl.Parent = Topbar
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Size = UDim2.new(0,400,0,30)
+    TitleLbl.Font = Enum.Font.Jura
+    TitleLbl.RichText = true
+    TitleLbl.Text = "<b>"..Title.."  |</b>  "..Description
+    TitleLbl.TextColor3 = PALETTE.TextPrimary
+    TitleLbl.TextSize = 15
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    addTextStroke(TitleLbl) -- Add dirty white stroke
+    Instance.new("UIPadding", TitleLbl).PaddingLeft = UDim.new(0,10)
 
-function stopOrbFarm(farmKey)
-    if orbCollectionLoops[farmKey] then
-        pcall(function() orbCollectionLoops[farmKey]:Disconnect() end)
-        orbCollectionLoops[farmKey] = nil
-    end
-end
+    Tabs.Name = "Tabs"
+    Tabs.Parent = Main
+    Tabs.BackgroundTransparency = 1
+    Tabs.Position = UDim2.new(0,0,.1,0)
+    Tabs.Size = UDim2.new(0,170,0,220)
+    Tabs.ZIndex = 2
 
--- ===== HOOPS FARMING WITH POPUP REMOVAL =====
-function startHoopFarm()
-    if loops.hoops then
-        pcall(function() loops.hoops:Disconnect() end)
-        loops.hoops = nil
-    end
-    
-    -- Store original properties on first run
-    if not next(originalHoopProperties) then
-        storeAllHoopProperties()
-    end
-    
-    -- Disable popup GUI and start cleanup loop
-    findAndDisableHoopPopups()
-    clearExistingPopups()
-    startPopupCleaner()
-    
-    loops.hoops = RunService.Heartbeat:Connect(function()
-        if not settings.hoops then return end
-        
-        local success, err = pcall(function()
-            local character = LocalPlayer.Character
-            if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-            
-            local hoopFolder = workspace:FindFirstChild("Hoops")
-            if not hoopFolder then return end
-            
-            for _, hoop in ipairs(hoopFolder:GetChildren()) do
-                if hoop.Name == "Hoop" then
-                    hideHoopRecursively(hoop, character.HumanoidRootPart.CFrame)
-                end
-            end
-        end)
-        
-        if not success then
-            warn("Hoop collection error: " .. tostring(err))
-        end
-        
-        wait(0.1)
-    end)
-end
+    TabsHolder.Parent = Tabs
+    TabsHolder.Active = true
+    TabsHolder.BackgroundTransparency = 1
+    TabsHolder.Size = UDim2.new(0,170,0,220)
+    TabsHolder.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    TabsHolder.ScrollBarImageTransparency = 1
+    TabsHolder.ScrollingDirection = Enum.ScrollingDirection.Y
 
-function stopHoopFarm()
-    if loops.hoops then
-        pcall(function() loops.hoops:Disconnect() end)
-        loops.hoops = nil
-    end
-    
-    -- Restore everything
-    restoreAllHoopProperties()
-    restoreHoopPopups()
-    stopPopupCleaner()
-end
+    UIList.Parent = TabsHolder
+    UIList.Padding = UDim.new(0,6)
+    UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ===== ANTI-LAG FUNCTION =====
-function toggleAntiLag(enable)
-    if enable then
-        -- Store and disable particle effects
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
-                originalProperties.particleEffects[v] = v.Enabled
-                v.Enabled = false
-            end
-        end
-        
-        -- Store and modify lighting
-        local lighting = game:GetService("Lighting")
-        originalProperties.lighting = {
-            GlobalShadows = lighting.GlobalShadows,
-            FogEnd = lighting.FogEnd,
-            Brightness = lighting.Brightness
-        }
-        lighting.GlobalShadows = false
-        lighting.FogEnd = 9e9
-        lighting.Brightness = 0
-        
-        -- Set quality level
-        settings().Rendering.QualityLevel = 1
-        
-        -- Store and modify decals/textures and baseParts
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("Decal") or v:IsA("Texture") then
-                originalProperties.decals[v] = v.Transparency
-                v.Transparency = 1
-            elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
-                originalProperties.baseParts[v] = {
-                    Material = v.Material,
-                    Reflectance = v.Reflectance
-                }
-                v.Material = Enum.Material.SmoothPlastic
-                if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
-                    -- Skip player parts
-                else
-                    v.Reflectance = 0
-                end
-            end
-        end
-        
-        -- Store and disable lighting effects
-        local lighting = game:GetService("Lighting")
-        for _, v in pairs(lighting:GetChildren()) do
-            if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
-                originalProperties.lightingEffects[v] = v.Enabled
-                v.Enabled = false
-            end
-        end
-    else
-        -- Restore particle effects
-        for obj, enabled in pairs(originalProperties.particleEffects) do
-            if obj and obj.Parent then
-                obj.Enabled = enabled
-            end
-        end
-        
-        -- Restore lighting
-        local lighting = game:GetService("Lighting")
-        if originalProperties.lighting.GlobalShadows ~= nil then
-            lighting.GlobalShadows = originalProperties.lighting.GlobalShadows
-        end
-        if originalProperties.lighting.FogEnd ~= nil then
-            lighting.FogEnd = originalProperties.lighting.FogEnd
-        end
-        if originalProperties.lighting.Brightness ~= nil then
-            lighting.Brightness = originalProperties.lighting.Brightness
-        end
-        
-        -- Restore decals/textures
-        for obj, transparency in pairs(originalProperties.decals) do
-            if obj and obj.Parent then
-                obj.Transparency = transparency
-            end
-        end
-        
-        -- Restore baseParts
-        for obj, props in pairs(originalProperties.baseParts) do
-            if obj and obj.Parent then
-                obj.Material = props.Material
-                obj.Reflectance = props.Reflectance
-            end
-        end
-        
-        -- Restore lighting effects
-        for obj, enabled in pairs(originalProperties.lightingEffects) do
-            if obj and obj.Parent then
-                obj.Enabled = enabled
-            end
-        end
-        
-        -- Note: QualityLevel cannot be reverted dynamically in Roblox
-    end
-end
+    ElementsHolder.Name = "ElementsHolder"
+    ElementsHolder.Parent = Main
+    ElementsHolder.BackgroundTransparency = 1
+    ElementsHolder.Position = UDim2.new(.345,0,.1,0)
+    ElementsHolder.Size = UDim2.new(0,340,0,260)
+    ElementsHolder.ZIndex = 2
+    ElementsHolder.ClipsDescendants = true
 
--- ===== TAB CREATION =====
+    UserBar.Name = "User"
+    UserBar.Parent = Main
+    UserBar.BackgroundColor3 = PALETTE.Surface
+    UserBar.BackgroundTransparency = .2
+    UserBar.BorderSizePixel = 0
+    UserBar.Position = UDim2.new(0,8,.87,0)
+    UserBar.Size = UDim2.new(0,160,0,30)
+    UserBar.ZIndex = 2
+    Instance.new("UICorner", UserBar).CornerRadius = UDim.new(0,6)
 
-local Universal_Tools = window:CreateTab("Universal Tools", 96221607452840)
-Universal_Tools:CreateSection("Miscellaneous")
-Universal_Tools:CreateBox("Enter FPS Cap", function(value)
-    settings.fpsCap = tonumber(value) or 60
-    if setfpscap then setfpscap(settings.fpsCap) end
-end)
-Universal_Tools:CreateSection("Network Optimization")
-Universal_Tools:CreateToggle("Enable Ping Stabilizer", function(state)
-    settings.pingStabilizer = state
-    if state then startPingStabilizer() elseif loops.pingStabilizer then loops.pingStabilizer:Disconnect(); loops.pingStabilizer = nil end
-end)
-Universal_Tools:CreateToggle("Connection Enhancer", function(state)
-    settings.connectionEnhancer = state
-    if state then startConnectionEnhancer() elseif loops.connection then loops.connection:Disconnect(); loops.connection = nil end
-end)
+    UserIcon.Name = "UserIcon"
+    UserIcon.Parent = UserBar
+    UserIcon.AnchorPoint = Vector2.new(0,.5)
+    UserIcon.BackgroundTransparency = 1
+    UserIcon.Position = UDim2.new(0,8,.5,0)
+    UserIcon.Size = UDim2.new(0,18,0,18)
+    UserIcon.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=123093571305491"
+    UserIcon.ImageColor3 = PALETTE.TextPrimary
 
-local Auto_Farming = window:CreateTab("Auto Farming", 103858677733367)
-Auto_Farming:CreateSection("Race Farming")
-Auto_Farming:CreateDropdown("Racing Mode", {"Teleport", "Smooth"}, function(value)
-    settings.race.mode = value
-end)
-Auto_Farming:CreateToggle("Auto Fill Race", function(state)
-    settings.race.autoFill = state
-    if state then startAutoFillRace() end
-end)
-Auto_Farming:CreateBox("Race Target", function(value)
-    settings.race.target = tonumber(value) or 100
-end)
-Auto_Farming:CreateToggle("Enable Auto Racing", function(state)
-    settings.race.enabled = state
-    if state then startRaceFarm() else stopRaceFarm() end
-end)
+    UserText.Name = "UserText"
+    UserText.Parent = UserBar
+    UserText.BackgroundTransparency = 1
+    UserText.Size = UDim2.new(0,160,0,30)
+    UserText.Font = Enum.Font.Jura
+    UserText.RichText = true
+    UserText.Text = "<b>"..username.."</b>"
+    UserText.TextColor3 = PALETTE.TextSecondary
+    UserText.TextSize = 14
+    UserText.TextXAlignment = Enum.TextXAlignment.Left
+    UserText.ClipsDescendants = true
+    UserText.TextTruncate = Enum.TextTruncate.AtEnd
+    addTextStroke(UserText) -- Add dirty white stroke
+    Instance.new("UIPadding", UserText).PaddingLeft = UDim.new(0,36)
 
-Auto_Farming:CreateSection("Hoop Farming")
-Auto_Farming:CreateButton("Clear Hoops", function()
-    clearAllHoops()
-end)
-Auto_Farming:CreateToggle("Auto Collect Hoops", function(state)
-    settings.hoops = state
-    if state then startHoopFarm() else stopHoopFarm() end
-end)
+    -- // DRAG
+    local dragging, dragInput, dragStart, startPos
+    local lastMouse, lastGoal
+    local DRAG_SPEED = 10
 
-for _, farmType in ipairs({"Primary", "Secondary", "Third"}) do
-    local key = farmType:lower()
-    Auto_Farming:CreateSection(farmType .. " Auto Farm")
-    
-    Auto_Farming:CreateDropdown("Orb Type", orbTypes, function(value)
-        settings[key].orb = value
-    end)
-    
-    Auto_Farming:CreateDropdown("Target City", cities, function(value)
-        settings[key].city = value
-    end)
-    
-    Auto_Farming:CreateDropdown("Collection Speed", collectionRates, function(value)
-        settings[key].speed = tonumber(value:match("x(%d+)")) or 1000
-    end)
-    
-    Auto_Farming:CreateBox("Cooldown (seconds)", function(value)
-        settings[key].cooldown = tonumber(value) or 0.5
-    end)
-    
-    Auto_Farming:CreateToggle("Enable " .. farmType .. " Farm", function(state)
-        settings[key].active = state
-        if state then 
-            startOrbFarm(key) 
-        else 
-            stopOrbFarm(key) 
-        end
-    end)
-end
-
-Auto_Farming:CreateSection("Extra Farming Options")
-Auto_Farming:CreateToggle("Auto Gifts", function(state)
-    settings.gifts = state
-    if state then startGiftCollection() else stopGiftCollection() end
-end)
-Auto_Farming:CreateToggle("Auto Claim Chests", function(state)
-    settings.chests = state
-    if state then startChestCollection() else stopChestCollection() end
-end)
-Auto_Farming:CreateToggle("Auto Spin Wheel", function(state)
-    settings.spinWheel = state
-    if state then startWheelSpin() else stopWheelSpin() end
-end)
-Auto_Farming:CreateButton("Claim All Codes", function()
-    claimAllCodes()
-end)
-
--- PET HATCHING TAB (ONLY BASIC NOW)
-local Pet_Hatching = window:CreateTab("Pet Hatching", 84773625854784)
-
--- Only create Basic Pets section
-Pet_Hatching:CreateSection("All Pets")
-petDropdowns["basic"] = Pet_Hatching:CreateDropdown("Select Pet", allPetNames, function(value)
-    settings.pets.basic.selected = value
-end)
-Pet_Hatching:CreateToggle("Auto Hatch Pet", function(state)
-    settings.pets.basic.hatch = state
-    if state then startPetHatching("basic") else stopPetHatching("basic") end
-end)
-
-local Teleportation = window:CreateTab("Teleportation", 140134362123695)
-Teleportation:CreateSection("Main Teleports")
-local mainLocations = {"City", "Snow City", "Magma City", "Legends Highway", "Speed Jungle"}
-Teleportation:CreateDropdown("Select Main Location", mainLocations, function(value)
-    teleportToLocation(value)
-end)
-
-Teleportation:CreateSection("Server Teleports")
-local serverOptions = {"Lowest Player Count", "Server Hop", "Rejoin"}
-Teleportation:CreateDropdown("Server Options", serverOptions, function(value)
-    if value == "Lowest Player Count" then teleportToLowestServer()
-    elseif value == "Server Hop" then serverHop()
-    elseif value == "Rejoin" then rejoinServer() end
-end)
-
-local Rebirth_System = window:CreateTab("Rebirth System", 98702116897863)
-Rebirth_System:CreateSection("Rebirth Farming")
-Rebirth_System:CreateBox("Rebirth Cooldown (sec)", function(value)
-    settings.rebirth.cooldown = tonumber(value) or 1
-end)
-Rebirth_System:CreateToggle("Auto Rebirth", function(state)
-    settings.rebirth.enabled = state
-    if state then startAutoRebirth() else stopAutoRebirth() end
-end)
-
-Rebirth_System:CreateSection("Targeted Rebirth Farming")
-Rebirth_System:CreateBox("Rebirth Target Amount", function(value)
-    settings.rebirth.targetAmount = tonumber(value) or 100
-end)
-Rebirth_System:CreateBox("Target Rebirth Cooldown (sec)", function(value)
-    settings.rebirth.targetCooldown = tonumber(value) or 1
-end)
-Rebirth_System:CreateToggle("Targeted Auto Rebirth", function(state)
-    settings.rebirth.target = state
-    if state then startTargetRebirth() else stopTargetRebirth() end
-end)
-
-Rebirth_System:CreateSection("Instant Rebirth Farming")
-Rebirth_System:CreateBox("Rebirths to Perform", function(value)
-    settings.instantRebirth.amount = tonumber(value) or 1
-end)
-Rebirth_System:CreateButton("Start Rebirth", function()
-    performInstantRebirth(settings.instantRebirth.amount)
-end)
-
-local Script_Settings = window:CreateTab("Settings", 139117814373418)
-Script_Settings:CreateSection("General Settings")
-Script_Settings:CreateToggle("Freeze Character", function(state)
-    settings.freezeChar = state
-    freezeCharacter(state)
-end)
-Script_Settings:CreateToggle("Enable Bull Mode", function(state)
-    settings.bullMode = state
-end)
-
-Script_Settings:CreateSection("Performance")
-Script_Settings:CreateToggle("Anti-Lag Mode", function(state)
-    settings.antiLag = state
-    toggleAntiLag(state)
-end)
-
-Script_Settings:CreateSection("Player Settings")
-Script_Settings:CreateBox("Set Walk Speed", function(value)
-    settings.walkSpeed = tonumber(value) or 50
-    updatePlayerStats()
-end)
-Script_Settings:CreateBox("Set Jump Power", function(value)
-    settings.jumpPower = tonumber(value) or 50
-    updatePlayerStats()
-end)
-Script_Settings:CreateBox("Set Hip Height", function(value)
-    settings.hipHeight = tonumber(value) or 0
-    updatePlayerStats()
-end)
-Script_Settings:CreateBox("Set Gravity", function(value)
-    settings.gravity = tonumber(value) or 196.2
-    workspace.Gravity = settings.gravity
-end)
-
--- ===== CREDITS TAB (REPLACED PLAYER STATISTICS) =====
-local Credits = window:CreateTab("Credits", 133249606271733)
-Credits:CreateSection("Credits")
-Credits:CreateLabel("Credits to: MARKYY")
-
-Credits:CreateButton("Discord: Click to Copy", function()
-    pcall(function()
-        setclipboard("https://discord.gg/WMAHNafHqZ ")
-    end)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Credits",
-        Text = "Discord link copied to clipboard!",
-        Duration = 3
-    })
-end)
-
-Credits:CreateButton("Roblox Profile: Click to Copy", function()
-    pcall(function()
-        setclipboard("https://www.roblox.com/users/2815154822/profile ")
-    end)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Credits",
-        Text = "Roblox profile link copied to clipboard!",
-        Duration = 3
-    })
-end)
-
-Credits:CreateButton("TikTok: Click to Copy", function()
-    pcall(function()
-        setclipboard("https://www.tiktok.com/@markyy_0311 ")
-    end)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Credits",
-        Text = "TikTok link copied to clipboard!",
-        Duration = 3
-    })
-end)
-
--- ===== CORE FUNCTIONS =====
-
-function getPetObject(petName)
-    return petShopFolder:FindFirstChild(petName)
-end
-
-function startPetHatching(petType)
-    if loops.petHatch[petType] then loops.petHatch[petType]:Disconnect() end
-    loops.petHatch[petType] = RunService.Heartbeat:Connect(function()
-        local petConfig = settings.pets[petType]
-        if not petConfig or not petConfig.hatch or not petConfig.selected then return end
-        local petObj = getPetObject(petConfig.selected)
-        if not petObj then return end
-        pcall(function()
-            petShopRemote:InvokeServer(petObj)
-        end)
-        wait(0.5)
-    end)
-end
-
-function stopPetHatching(petType)
-    if loops.petHatch[petType] then
-        loops.petHatch[petType]:Disconnect()
-        loops.petHatch[petType] = nil
-    end
-end
-
-function teleportToLocation(location)
-    local cframes = {
-        ["City"] = CFrame.new(-9687.19, 59.07, 3096.59),
-        ["Snow City"] = CFrame.new(-9677.66, 59.07, 3783.74),
-        ["Magma City"] = CFrame.new(-11053.38, 217.03, 4896.11),
-        ["Legends Highway"] = CFrame.new(-13097.86, 217.03, 5904.85),
-        ["Speed Jungle"] = CFrame.new(-15271.71, 398.20, 5574.44)
-    }
-    local character = LocalPlayer.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = cframes[location] or cframes["City"]
-    end
-end
-
-function teleportToLowestServer()
-    local servers = getServers(game.PlaceId)
-    if #servers > 0 then
-        local lowest = servers[1]
-        for _, server in ipairs(servers) do
-            if server.playing < lowest.playing then lowest = server end
-        end
-        teleportToServer(game.PlaceId, lowest.id)
-    end
-end
-
-function serverHop()
-    local servers = getServers(game.PlaceId)
-    if #servers > 0 then
-        local randomServer = servers[math.random(1, #servers)]
-        teleportToServer(game.PlaceId, randomServer.id)
-    end
-end
-
-function rejoinServer()
-    teleportToServer(game.PlaceId, game.JobId)
-end
-
-function getServers(placeId)
-    local url = "https://games.roblox.com/v1/games/       " .. placeId .. "/servers/Public?sortOrder=Desc&limit=100"
-    local success, response = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet(url))
-    end)
-    if success and response then return response.data or {} end
-    return {}
-end
-
-function teleportToServer(placeId, jobId)
-    pcall(function()
-        TeleportService:TeleportToPlaceInstance(placeId, jobId)
-    end)
-end
-
-function startPingStabilizer()
-    if loops.pingStabilizer then loops.pingStabilizer:Disconnect() end
-    loops.pingStabilizer = RunService.Heartbeat:Connect(function()
-        if not settings.pingStabilizer then return end
-        local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
-        if ping > 100 then wait(0.1) end
-    end)
-end
-
-function startConnectionEnhancer()
-    if loops.connection then loops.connection:Disconnect() end
-    loops.connection = RunService.Heartbeat:Connect(function()
-        if not settings.connectionEnhancer then return end
-        pcall(function()
-            local networkClient = game:GetService("NetworkClient")
-            networkClient:SetOutgoingKBPSLimit(999999)
-            networkClient:SetIncomingKBPSLimit(999999)
-            settings().Network.IncomingReplicationLag = 0
-        end)
-        wait(1)
-    end)
-end
-
-function startRaceFarm()
-    if loops.race then loops.race:Disconnect() end
-    loops.race = RunService.Heartbeat:Connect(function()
-        if not settings.race.enabled then return end
-        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-        if not leaderstats then return end
-        local races = leaderstats:FindFirstChild("Races")
-        if not races then return end
-        
-        if races.Value >= settings.race.target then
-            settings.race.enabled = false
+    function Lerp(a,b,m) return a + (b-a)*m end
+    function Update(dt)
+        if not startPos then return end
+        if not dragging and lastGoal then
+            Main.Position = UDim2.new(startPos.X.Scale, Lerp(Main.Position.X.Offset, lastGoal.X.Offset, dt*DRAG_SPEED),
+                                      startPos.Y.Scale, Lerp(Main.Position.Y.Offset, lastGoal.Y.Offset, dt*DRAG_SPEED))
             return
         end
-        
-        local raceTimer = game:GetService("ReplicatedStorage"):FindFirstChild("raceTimer")
-        local raceStarted = game:GetService("ReplicatedStorage"):FindFirstChild("raceStarted")
-        local character = LocalPlayer.Character
-        
-        if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-        
-        if settings.race.autoFill and raceTimer and raceTimer:IsA("IntValue") and raceTimer.Value <= 0 then
-            wait(0.5)
-            raceRemote:FireServer("joinRace")
+        local delta = lastMouse - UserInputService:GetMouseLocation()
+        local xGoal = startPos.X.Offset - delta.X
+        local yGoal = startPos.Y.Offset - delta.Y
+        lastGoal = UDim2.new(startPos.X.Scale, xGoal, startPos.Y.Scale, yGoal)
+        Main.Position = UDim2.new(startPos.X.Scale, Lerp(Main.Position.X.Offset, xGoal, dt*DRAG_SPEED),
+                                  startPos.Y.Scale, Lerp(Main.Position.Y.Offset, yGoal, dt*DRAG_SPEED))
+    end
+    Main.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = inp.Position; startPos = Main.Position; lastMouse = UserInputService:GetMouseLocation()
+            inp.Changed:Connect(function() if inp.UserInputState == Enum.UserInputState.End then dragging = false end end)
         end
-        
-        if settings.race.mode == "Teleport" then
-            pcall(function()
-                local positions = {
-                    Vector3.new(1686.07, 36.31, -5946.63),
-                    Vector3.new(48.31, 36.31, -8680.45),
-                    Vector3.new(1001.33, 36.31, -10986.21)
-                }
-                for _, pos in ipairs(positions) do
-                    character:MoveTo(pos)
-                    wait(0.1)
-                end
-            end)
-        elseif settings.race.mode == "Smooth" then
-            if raceTimer and raceTimer:IsA("IntValue") and raceTimer.Value <= 0 then
-                wait(0.5)
-                raceRemote:FireServer("joinRace")
+    end)
+    Main.InputChanged:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
+            dragInput = inp
+        end
+    end)
+    runService.Heartbeat:Connect(Update)
+
+    -- // TOGGLE VISIBILITY
+    UserInputService.InputBegan:Connect(function(inp,gP)
+        if not gP and inp.KeyCode == Enum.KeyCode.LeftAlt then Library.Enabled = not Library.Enabled end
+    end)
+
+    -- // UI-TOGGLER BUTTON
+    local toggleHolder = Instance.new("Frame")
+    local toggleBtn = Instance.new("ImageButton")
+    local toggleLogo = Instance.new("ImageLabel")
+    toggleHolder.Name = "UITogglerHolder"
+    toggleHolder.Parent = Library
+    toggleHolder.AnchorPoint = Vector2.new(.5,.5)
+    toggleHolder.BackgroundColor3 = PALETTE.Background
+    toggleHolder.BackgroundTransparency = .1
+    toggleHolder.BorderSizePixel = 0
+    toggleHolder.Position = UDim2.new(.5,0,-.5,0)
+    toggleHolder.Size = UDim2.new(0,36,0,36)
+    toggleHolder.ClipsDescendants = true
+    Instance.new("UICorner", toggleHolder).CornerRadius = UDim.new(0,8)
+
+    toggleBtn.Name = "UIToggler"
+    toggleBtn.Parent = toggleHolder
+    toggleBtn.Active = true
+    toggleBtn.BackgroundTransparency = 1
+    toggleBtn.Size = UDim2.new(0,36,0,36)
+    toggleBtn.ZIndex = 2
+    toggleBtn.Image = "rbxassetid://131129943627373"
+    toggleBtn.ImageTransparency = .45
+    toggleBtn.ImageColor3 = PALETTE.Accent
+
+    toggleLogo.Name = "UITogglerLogo"
+    toggleLogo.Parent = toggleHolder
+    toggleLogo.AnchorPoint = Vector2.new(.5,.5)
+    toggleLogo.BackgroundTransparency = 1
+    toggleLogo.Position = UDim2.new(.5,0,.5,0)
+    toggleLogo.Size = UDim2.new(0,30,0,30)
+    toggleLogo.ZIndex = 2
+    toggleLogo.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=123093571305491"
+    toggleLogo.ImageColor3 = PALETTE.TextPrimary
+
+    toggleBtn.MouseButton1Click:Connect(function()
+        if uiOpen then
+            uiOpen = false
+            TweenService:Create(Main, TweenInfo.new(.8,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {Position = UDim2.new(.5,0,2,0)}):Play()
+            dragging = false; lastGoal = nil; startPos = nil
+        else
+            uiOpen = true
+            TweenService:Create(Main, TweenInfo.new(.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {Position = UDim2.new(.5,0,.5,0)}):Play()
+            dragging = false; lastGoal = nil; startPos = nil
+        end
+    end)
+
+    -- // OPEN ANIMS
+    TweenService:Create(toggleHolder, TweenInfo.new(.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+        {Position = UDim2.new(.5,0,.015,0)}):Play()
+    TweenService:Create(Main, TweenInfo.new(.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+        {Position = UDim2.new(.5,0,.5,0)}):Play()
+
+    -- // TABS
+    local Tabs = {}
+    local allTitles, allIcons, allTabs = {}, {}, {}
+    local currentTab, currentIcon, currentTabIndex = nil, nil, nil
+    local first = true
+
+    function Tabs:CreateTab(Title, Icon)
+        local TabHolder = Instance.new("Frame")
+        local corner = Instance.new("UICorner")
+        local TabBtn = Instance.new("TextButton")
+        local TabIco = Instance.new("ImageLabel")
+        local Elements = Instance.new("Frame")
+        local Items = Instance.new("ScrollingFrame")
+        local UIList = Instance.new("UIListLayout")
+
+        TabHolder.Name = "TabHolder"
+        TabHolder.Parent = TabsHolder
+        TabHolder.BackgroundColor3 = PALETTE.Surface
+        TabHolder.BackgroundTransparency = .8
+        TabHolder.BorderSizePixel = 0
+        TabHolder.Size = UDim2.new(0,160,0,30)
+        corner.CornerRadius = UDim.new(0,6)
+        corner.Parent = TabHolder
+
+        TabBtn.Name = "TabTitle"
+        TabBtn.Parent = TabHolder
+        TabBtn.BackgroundTransparency = 1
+        TabBtn.Size = UDim2.new(0,160,0,30)
+        TabBtn.Font = Enum.Font.Jura
+        TabBtn.RichText = true
+        TabBtn.Text = "<b>"..Title.."</b>"
+        TabBtn.TextColor3 = PALETTE.TextSecondary
+        TabBtn.TextSize = 14
+        TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+        addTextStroke(TabBtn) -- Add dirty white stroke
+        Instance.new("UIPadding", TabBtn).PaddingLeft = UDim.new(0,36)
+
+        TabIco.Name = "TabIcon"
+        TabIco.Parent = TabHolder
+        TabIco.AnchorPoint = Vector2.new(0,.5)
+        TabIco.BackgroundTransparency = 1
+        TabIco.Position = UDim2.new(0,8,.5,0)
+        TabIco.Size = UDim2.new(0,18,0,18)
+        TabIco.Image = "rbxassetid://"..Icon
+        TabIco.ImageColor3 = PALETTE.TextSecondary
+
+        Elements.Name = "Elements"
+        Elements.Parent = ElementsHolder
+        Elements.BackgroundTransparency = 1
+        Elements.Size = UDim2.new(0,340,0,260)
+
+        Items.Name = "Items"
+        Items.Parent = Elements
+        Items.Active = true
+        Items.BackgroundTransparency = 1
+        Items.Size = UDim2.new(0,340,0,260)
+        Items.ClipsDescendants = true
+        Items.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Items.ScrollBarImageTransparency = 1
+        Items.ScrollingDirection = Enum.ScrollingDirection.Y
+
+        UIList.Parent = Items
+        UIList.Padding = UDim.new(0,6)
+        UIList.SortOrder = Enum.SortOrder.LayoutOrder
+        Instance.new("UIPadding", Items).PaddingTop = UDim.new(0,4)
+
+        table.insert(allTitles, TabBtn)
+        table.insert(allIcons, TabIco)
+        table.insert(allTabs, Elements)
+
+        if first then
+            first = false
+            Elements.Visible = true; Elements.Position = UDim2.new(0,0,0,0)
+            currentTab = TabBtn; currentIcon = TabIco; currentTabIndex = 1
+            TabBtn.TextColor3 = PALETTE.TextPrimary
+            TabIco.ImageColor3 = PALETTE.TextPrimary
+        else
+            Elements.Visible = false
+            TabBtn.TextColor3 = PALETTE.TextDisabled
+            TabIco.ImageColor3 = PALETTE.TextDisabled
+        end
+
+        TabBtn.MouseButton1Click:Connect(function()
+            if currentTab == TabBtn then return end
+            local newIdx = table.find(allTitles, TabBtn)
+            if not newIdx then return end
+            local dir = (newIdx > currentTabIndex) and 1 or -1
+            local curFrm = allTabs[currentTabIndex]
+            local newFrm = allTabs[newIdx]
+
+            if currentTab and currentIcon then
+                TweenService:Create(currentTab, TweenInfo.new(.2), {TextColor3 = PALETTE.TextDisabled}):Play()
+                TweenService:Create(currentIcon, TweenInfo.new(.2), {ImageColor3 = PALETTE.TextDisabled}):Play()
             end
-            if raceStarted and raceStarted:IsA("BoolValue") and raceStarted.Value == true then
-                wait(0.5)
-                pcall(function()
-                    local finishParts = workspace:GetDescendants()
-                    local closestPart = nil
-                    local minDist = math.huge
-                    for _, part in ipairs(finishParts) do
-                        if part:IsA("BasePart") and part.Name == "finishPart" then
-                            local dist = (character.HumanoidRootPart.Position - part.Position).Magnitude
-                            if dist < minDist then
-                                minDist = dist
-                                closestPart = part
-                            end
-                        end
+            TweenService:Create(TabBtn, TweenInfo.new(.2), {TextColor3 = PALETTE.TextPrimary}):Play()
+            TweenService:Create(TabIco, TweenInfo.new(.2), {ImageColor3 = PALETTE.TextPrimary}):Play()
+
+            newFrm.Position = UDim2.new(dir,0,0,0); newFrm.Visible = true
+            local tOut = TweenService:Create(curFrm, TweenInfo.new(.25), {Position = UDim2.new(-dir,0,0,0)})
+            local tIn = TweenService:Create(newFrm, TweenInfo.new(.25), {Position = UDim2.new(0,0,0,0)})
+            tOut:Play(); tIn:Play()
+            tOut.Completed:Connect(function() curFrm.Visible = false end)
+
+            currentTab = TabBtn; currentIcon = TabIco; currentTabIndex = newIdx
+        end)
+
+        -- // ELEMENTS
+        local Elements = {}
+
+        function Elements:CreateSection(Title)
+            local Section = Instance.new("Frame")
+            local SectionTitle = Instance.new("TextLabel")
+            Section.Name = "Section"
+            Section.Parent = Items
+            Section.BackgroundTransparency = 1
+            Section.BorderSizePixel = 0
+            Section.Size = UDim2.new(0,336,0,28)
+            SectionTitle.Parent = Section
+            SectionTitle.BackgroundTransparency = 1
+            SectionTitle.Size = UDim2.new(0,336,0,28)
+            SectionTitle.Font = Enum.Font.Jura
+            SectionTitle.RichText = true
+            SectionTitle.Text = "<b>"..Title.."</b>"
+            SectionTitle.TextColor3 = PALETTE.TextSecondary
+            SectionTitle.TextSize = 14
+            SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+            addTextStroke(SectionTitle) -- Add dirty white stroke
+            Instance.new("UIPadding", SectionTitle).PaddingLeft = UDim.new(0,2)
+            
+            -- Return object with UpdateText method
+            return {
+                UpdateText = function(self, newText)
+                    SectionTitle.Text = "<b>"..newText.."</b>"
+                end
+            }
+        end
+
+        function Elements:CreateLabel(Title)
+            local Label = Instance.new("Frame")
+            local corner = Instance.new("UICorner")
+            local LabelTitle = Instance.new("TextLabel")
+            Label.Name = "Label"
+            Label.Parent = Items
+            Label.BackgroundColor3 = PALETTE.Surface
+            Label.BackgroundTransparency = .8
+            Label.BorderSizePixel = 0
+            Label.Size = UDim2.new(0,336,0,28)
+            corner.CornerRadius = UDim.new(0,6)
+            corner.Parent = Label
+            LabelTitle.Parent = Label
+            LabelTitle.BackgroundTransparency = 1
+            LabelTitle.Size = UDim2.new(0,336,0,28)
+            LabelTitle.Font = Enum.Font.Jura
+            LabelTitle.RichText = true
+            LabelTitle.Text = "<b>"..Title.."</b>"
+            LabelTitle.TextColor3 = PALETTE.TextPrimary
+            LabelTitle.TextSize = 14
+            addTextStroke(LabelTitle) -- Add dirty white stroke
+            
+            -- Return object with UpdateText method (replaced SetText)
+            return {
+                UpdateText = function(self, newText)
+                    LabelTitle.Text = "<b>"..newText.."</b>"
+                end
+            }
+        end
+
+        function Elements:CreateButton(Title, Callback)
+            local Button = Instance.new("Frame")
+            local corner = Instance.new("UICorner")
+            local Btn = Instance.new("TextButton")
+            Button.Name = "Button"
+            Button.Parent = Items
+            Button.BackgroundColor3 = PALETTE.Surface
+            Button.BackgroundTransparency = .8
+            Button.BorderSizePixel = 0
+            Button.Size = UDim2.new(0,336,0,34)
+            corner.CornerRadius = UDim.new(0,6)
+            corner.Parent = Button
+            Btn.Parent = Button
+            Btn.BackgroundTransparency = 1
+            Btn.Size = UDim2.new(0,336,0,34)
+            Btn.Font = Enum.Font.Jura
+            Btn.RichText = true
+            Btn.Text = "<b>"..Title.."</b>"
+            Btn.TextColor3 = PALETTE.TextSecondary
+            Btn.TextSize = 14
+            Btn.TextXAlignment = Enum.TextXAlignment.Left
+            addTextStroke(Btn) -- Add dirty white stroke
+            Instance.new("UIPadding", Btn).PaddingLeft = UDim.new(0,16)
+
+            Btn.MouseButton1Click:Connect(function()
+                if _G.SafeLock then
+                    KyyfiiiLibrary:createNotification("Safe Lock on! Disable to use features.")
+                    return
+                end
+                local t1 = TweenService:Create(Btn, TweenInfo.new(.1), {TextColor3 = PALETTE.TextPrimary})
+                t1:Play()
+                t1.Completed:Connect(function()
+                    TweenService:Create(Btn, TweenInfo.new(.2), {TextColor3 = PALETTE.TextSecondary}):Play()
+                end)
+                Callback()
+            end)
+            
+            -- Return object with UpdateText method
+            return {
+                UpdateText = function(self, newText)
+                    Btn.Text = "<b>"..newText.."</b>"
+                end
+            }
+        end
+
+        function Elements:CreateToggle(Title, Callback)
+            Callback = Callback or function() end
+            local toggled = false
+            local debounce = false
+
+            local Toggle = Instance.new("Frame")
+            local corner = Instance.new("UICorner")
+            local ToggleTitle = Instance.new("TextLabel")
+            local TogglerHolder = Instance.new("Frame")
+            local Toggler = Instance.new("TextButton")
+
+            Toggle.Name = "Toggle"
+            Toggle.Parent = Items
+            Toggle.BackgroundColor3 = PALETTE.Surface
+            Toggle.BackgroundTransparency = .8
+            Toggle.BorderSizePixel = 0
+            Toggle.Size = UDim2.new(0,336,0,34)
+            corner.CornerRadius = UDim.new(0,6)
+            corner.Parent = Toggle
+
+            ToggleTitle.Name = "ToggleTitle"
+            ToggleTitle.Parent = Toggle
+            ToggleTitle.BackgroundTransparency = 1
+            ToggleTitle.Size = UDim2.new(0,240,0,34)
+            ToggleTitle.Font = Enum.Font.Jura
+            ToggleTitle.RichText = true
+            ToggleTitle.Text = "<b>"..Title.."</b>"
+            ToggleTitle.TextColor3 = PALETTE.TextSecondary
+            ToggleTitle.TextSize = 14
+            ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+            addTextStroke(ToggleTitle) -- Add dirty white stroke
+            Instance.new("UIPadding", ToggleTitle).PaddingLeft = UDim.new(0,16)
+
+            TogglerHolder.Name = "TogglerHolder"
+            TogglerHolder.Parent = Toggle
+            TogglerHolder.AnchorPoint = Vector2.new(0,.5)
+            TogglerHolder.BackgroundColor3 = PALETTE.Background
+            TogglerHolder.BackgroundTransparency = .25
+            TogglerHolder.BorderSizePixel = 0
+            TogglerHolder.Position = UDim2.new(0,300,.5,0)
+            TogglerHolder.Size = UDim2.new(0,22,0,22)
+            Instance.new("UICorner", TogglerHolder).CornerRadius = UDim.new(0,6)
+
+            Toggler.Name = "Toggler"
+            Toggler.Parent = TogglerHolder
+            Toggler.Active = true
+            Toggler.BackgroundTransparency = 1
+            Toggler.Size = UDim2.new(0,22,0,22)
+            Toggler.Font = Enum.Font.SourceSans
+            Toggler.Text = ""
+            Toggler.TextSize = 14
+
+            Toggler.MouseButton1Click:Connect(function()
+                if _G.SafeLock then
+                    if ToggleTitle.Text == "<b>Safe Lock</b>" then
+                        _G.SafeLock = false
+                        TweenService:Create(TogglerHolder, tweenInfo, {BackgroundColor3 = PALETTE.Background}):Play()
+                        TweenService:Create(ToggleTitle, tweenInfo, {TextColor3 = PALETTE.TextSecondary}):Play()
+                        KyyfiiiLibrary:createNotification("Safe Lock disabled! All inputs unlocked.")
+                        return
+                    else
+                        KyyfiiiLibrary:createNotification("Safe Lock on! Disable to use features.")
+                        return
                     end
-                    if closestPart then
-                        character:MoveTo(closestPart.Position)
+                else
+                    if ToggleTitle.Text == "<b>Safe Lock</b>" then
+                        _G.SafeLock = true
+                        TweenService:Create(TogglerHolder, tweenInfo, {BackgroundColor3 = PALETTE.Accent}):Play()
+                        TweenService:Create(ToggleTitle, tweenInfo, {TextColor3 = PALETTE.TextPrimary}):Play()
+                        KyyfiiiLibrary:createNotification("Safe Lock enabled! All inputs locked.")
+                        return
                     end
+                end
+                if debounce then return end
+                debounce = true
+                local ti = TweenInfo.new(.2)
+                if not toggled then
+                    TweenService:Create(TogglerHolder, ti, {BackgroundColor3 = PALETTE.Accent}):Play()
+                    TweenService:Create(ToggleTitle, ti, {TextColor3 = PALETTE.TextPrimary}):Play()
+                    toggled = true
+                else
+                    TweenService:Create(TogglerHolder, ti, {BackgroundColor3 = PALETTE.Background}):Play()
+                    TweenService:Create(ToggleTitle, ti, {TextColor3 = PALETTE.TextSecondary}):Play()
+                    toggled = false
+                end
+                pcall(Callback, toggled)
+                debounce = false
+            end)
+            
+            -- Return object with UpdateText method
+            return {
+                UpdateText = function(self, newText)
+                    ToggleTitle.Text = "<b>"..newText.."</b>"
+                end
+            }
+        end
+
+        function Elements:CreateBox(Title, Callback)
+            local Box = Instance.new("Frame")
+            local corner = Instance.new("UICorner")
+            local BoxTitle = Instance.new("TextLabel")
+            local TextBoxHolder = Instance.new("Frame")
+            local TextBox = Instance.new("TextBox")
+
+            Box.Name = "Box"
+            Box.Parent = Items
+            Box.BackgroundColor3 = PALETTE.Surface
+            Box.BackgroundTransparency = .8
+            Box.BorderSizePixel = 0
+            Box.Size = UDim2.new(0,336,0,34)
+            corner.CornerRadius = UDim.new(0,6)
+            corner.Parent = Box
+
+            BoxTitle.Name = "BoxTitle"
+            BoxTitle.Parent = Box
+            BoxTitle.BackgroundTransparency = 1
+            BoxTitle.Size = UDim2.new(0,240,0,34)
+            BoxTitle.Font = Enum.Font.Jura
+            BoxTitle.RichText = true
+            BoxTitle.Text = "<b>"..Title.."</b>"
+            BoxTitle.TextColor3 = PALETTE.TextSecondary
+            BoxTitle.TextSize = 14
+            BoxTitle.TextXAlignment = Enum.TextXAlignment.Left
+            addTextStroke(BoxTitle) -- Add dirty white stroke
+            Instance.new("UIPadding", BoxTitle).PaddingLeft = UDim.new(0,16)
+
+            TextBoxHolder.Name = "TextBoxHolder"
+            TextBoxHolder.Parent = Box
+            TextBoxHolder.AnchorPoint = Vector2.new(0,.5)
+            TextBoxHolder.BackgroundColor3 = PALETTE.Background
+            TextBoxHolder.BackgroundTransparency = .25
+            TextBoxHolder.BorderSizePixel = 0
+            TextBoxHolder.Position = UDim2.new(-0.178571433,300,.5,0)
+            TextBoxHolder.Size = UDim2.new(0,82,0,22)
+            Instance.new("UICorner", TextBoxHolder).CornerRadius = UDim.new(0,6)
+
+            TextBox.Parent = TextBoxHolder
+            TextBox.Active = true
+            TextBox.BackgroundTransparency = 1
+            TextBox.Size = UDim2.new(0,82,0,22)
+            TextBox.ClipsDescendants = true
+            TextBox.Font = Enum.Font.Jura
+            TextBox.PlaceholderColor3 = PALETTE.TextDisabled
+            TextBox.PlaceholderText = "..."
+            TextBox.Text = ""
+            TextBox.TextEditable = true
+            TextBox.ClearTextOnFocus = false
+            TextBox.TextColor3 = PALETTE.TextPrimary
+            TextBox.TextSize = 14
+            TextBox.TextTruncate = Enum.TextTruncate.AtEnd
+            TextBox.TextXAlignment = Enum.TextXAlignment.Right
+            addTextStroke(TextBox) -- Add dirty white stroke
+            local pad = Instance.new("UIPadding", TextBox)
+            pad.PaddingLeft = UDim.new(0,8)
+            pad.PaddingRight = UDim.new(0,8)
+
+            TextBox.Focused:Connect(function()
+                if _G.SafeLock then
+                    TextBox.TextEditable = false
+                    KyyfiiiLibrary:createNotification("Safe Lock on! Disable to use features.")
+                    return
+                end
+                TextBox.TextEditable = true
+                TweenService:Create(BoxTitle, TweenInfo.new(.1), {TextColor3 = PALETTE.TextPrimary}):Play()
+            end)
+            TextBox.FocusLost:Connect(function()
+                if _G.SafeLock then return end
+                Callback(TextBox.Text)
+                TweenService:Create(BoxTitle, TweenInfo.new(.2), {TextColor3 = PALETTE.TextSecondary}):Play()
+            end)
+            
+            -- Return object with UpdateText method for the BoxTitle
+            return {
+                UpdateText = function(self, newText)
+                    BoxTitle.Text = "<b>"..newText.."</b>"
+                end
+            }
+        end
+
+        function Elements:CreateDropdown(Title, Options, Callback)
+            local Dropdown = Instance.new("Frame")
+            local corner = Instance.new("UICorner")
+            local A_Dropdown = Instance.new("Frame")
+            local DropdownBarHolder = Instance.new("Frame")
+            local SelectedText = Instance.new("TextLabel")
+            local DropdownToggler = Instance.new("ImageButton")
+            local DropdownTitle = Instance.new("TextLabel")
+            local B_Dropdown = Instance.new("Frame")
+
+            Dropdown.Name = "Dropdown"
+            Dropdown.Parent = Items
+            Dropdown.AutomaticSize = Enum.AutomaticSize.Y
+            Dropdown.BackgroundColor3 = PALETTE.Surface
+            Dropdown.BackgroundTransparency = .8
+            Dropdown.BorderSizePixel = 0
+            Dropdown.Size = UDim2.new(0,336,0,34)
+            corner.CornerRadius = UDim.new(0,6)
+            corner.Parent = Dropdown
+
+            A_Dropdown.Name = "A_Dropdown"
+            A_Dropdown.Parent = Dropdown
+            A_Dropdown.AutomaticSize = Enum.AutomaticSize.Y
+            A_Dropdown.BackgroundTransparency = 1
+            A_Dropdown.Size = UDim2.new(0,336,0,34)
+
+            DropdownBarHolder.Name = "DropdownBarHolder"
+            DropdownBarHolder.Parent = A_Dropdown
+            DropdownBarHolder.AnchorPoint = Vector2.new(0,.5)
+            DropdownBarHolder.BackgroundColor3 = PALETTE.Background
+            DropdownBarHolder.BackgroundTransparency = .25
+            DropdownBarHolder.BorderSizePixel = 0
+            DropdownBarHolder.Position = UDim2.new(-0.327380955,300,.5,0)
+            DropdownBarHolder.Size = UDim2.new(0,132,0,22)
+            Instance.new("UICorner", DropdownBarHolder).CornerRadius = UDim.new(0,6)
+
+            SelectedText.Name = "SelectedText"
+            SelectedText.Parent = DropdownBarHolder
+            SelectedText.BackgroundTransparency = 1
+            SelectedText.Size = UDim2.new(0,100,0,22)
+            SelectedText.ClipsDescendants = true
+            SelectedText.Font = Enum.Font.Jura
+            SelectedText.RichText = true
+            SelectedText.Text = "None"
+            SelectedText.TextColor3 = PALETTE.TextPrimary
+            SelectedText.TextSize = 14
+            SelectedText.TextTruncate = Enum.TextTruncate.AtEnd
+            SelectedText.TextXAlignment = Enum.TextXAlignment.Right
+            addTextStroke(SelectedText) -- Add dirty white stroke
+            Instance.new("UIPadding", SelectedText).PaddingRight = UDim.new(0,2)
+
+            DropdownToggler.Name = "DropdownToggler"
+            DropdownToggler.Parent = DropdownBarHolder
+            DropdownToggler.Active = true
+            DropdownToggler.AnchorPoint = Vector2.new(0,.5)
+            DropdownToggler.BackgroundTransparency = 1
+            DropdownToggler.Position = UDim2.new(0.819999993,0,.5,0)
+            DropdownToggler.Rotation = 180
+            DropdownToggler.Size = UDim2.new(0,12,0,12)
+            DropdownToggler.Image = "rbxassetid://128993416980283"
+            DropdownToggler.ImageColor3 = PALETTE.TextPrimary
+
+            DropdownTitle.Name = "DropdownTitle"
+            DropdownTitle.Parent = A_Dropdown
+            DropdownTitle.BackgroundTransparency = 1
+            DropdownTitle.Size = UDim2.new(0,190,0,34)
+            DropdownTitle.Font = Enum.Font.Jura
+            DropdownTitle.RichText = true
+            DropdownTitle.Text = "<b>"..Title.."</b>"
+            DropdownTitle.TextColor3 = PALETTE.TextSecondary
+            DropdownTitle.TextSize = 14
+            DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+            addTextStroke(DropdownTitle) -- Add dirty white stroke
+            Instance.new("UIPadding", DropdownTitle).PaddingLeft = UDim.new(0,16)
+
+            B_Dropdown.Name = "B_Dropdown"
+            B_Dropdown.Parent = Dropdown
+            B_Dropdown.AutomaticSize = Enum.AutomaticSize.Y
+            B_Dropdown.BackgroundTransparency = 1
+            B_Dropdown.Size = UDim2.new(0,336,0,34)
+            B_Dropdown.Visible = false
+
+            Instance.new("UIListLayout", B_Dropdown).Padding = UDim.new(0,6)
+            local pad = Instance.new("UIPadding", B_Dropdown)
+            pad.PaddingBottom = UDim.new(0,8)
+            pad.PaddingLeft = UDim.new(0,13)
+            pad.PaddingTop = UDim.new(0,2)
+
+            local isOpen = false
+            local function Toggle()
+                if _G.SafeLock then
+                    KyyfiiiLibrary:createNotification("Safe Lock on! Disable to use features.")
+                    return
+                end
+                isOpen = not isOpen
+                local rot = isOpen and 90 or 180
+                TweenService:Create(DropdownToggler, TweenInfo.new(.2,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),
+                    {Rotation = rot}):Play()
+                B_Dropdown.Visible = isOpen
+                local tc = isOpen and PALETTE.TextPrimary or PALETTE.TextSecondary
+                TweenService:Create(DropdownTitle, TweenInfo.new(isOpen and .1 or .2), {TextColor3 = tc}):Play()
+            end
+            DropdownToggler.MouseButton1Click:Connect(Toggle)
+
+            for _, opt in ipairs(Options) do
+                local optFrm = Instance.new("Frame")
+                local optCorner = Instance.new("UICorner")
+                local optBtn = Instance.new("TextButton")
+                optFrm.Name = "OptionFrame"
+                optFrm.Parent = B_Dropdown
+                optFrm.BackgroundColor3 = PALETTE.Background
+                optFrm.BackgroundTransparency = .25
+                optFrm.BorderSizePixel = 0
+                optFrm.Size = UDim2.new(0,310,0,28)
+                optCorner.CornerRadius = UDim.new(0,6)
+                optCorner.Parent = optFrm
+                optBtn.Parent = optFrm
+                optBtn.BackgroundTransparency = 1
+                optBtn.Size = UDim2.new(0,310,0,28)
+                optBtn.Font = Enum.Font.Jura
+                optBtn.RichText = true
+                optBtn.Text = "<b>"..opt.."</b>"
+                optBtn.TextColor3 = PALETTE.TextSecondary
+                optBtn.TextSize = 14
+                optBtn.TextXAlignment = Enum.TextXAlignment.Right
+                addTextStroke(optBtn) -- Add dirty white stroke
+                Instance.new("UIPadding", optBtn).PaddingRight = UDim.new(0,14)
+
+                optBtn.MouseButton1Click:Connect(function()
+                    if _G.SafeLock then
+                        KyyfiiiLibrary:createNotification("Safe Lock on! Disable to use features.")
+                        return
+                    end
+                    SelectedText.Text = opt
+                    Callback(opt)
+                    Toggle()
                 end)
             end
-        end
-        wait(0.05)
-    end)
-end
-
-function stopRaceFarm()
-    if loops.race then
-        loops.race:Disconnect()
-        loops.race = nil
-    end
-end
-
-function startAutoFillRace()
-    spawn(function()
-        while settings.race.autoFill do
-            wait(0.01)
-            local raceTimer = game:GetService("ReplicatedStorage"):FindFirstChild("raceTimer")
-            if raceTimer and raceTimer:IsA("IntValue") and raceTimer.Value <= 0 then
-                raceRemote:FireServer("joinRace")
-            end
-        end
-    end)
-end
-
-function clearAllHoops()
-    pcall(function()
-        local hoops = Workspace:FindFirstChild("Hoops")
-        if hoops then
-            for _, hoop in ipairs(hoops:GetChildren()) do
-                if hoop:IsA("BasePart") then
-                    hoop:Destroy()
+            
+            -- Return object with UpdateText method for the DropdownTitle
+            return {
+                UpdateText = function(self, newText)
+                    DropdownTitle.Text = "<b>"..newText.."</b>"
                 end
-            end
+            }
         end
-    end)
-end
 
-function startGiftCollection()
-    if loops.gifts then loops.gifts:Disconnect() end
-    loops.gifts = RunService.Heartbeat:Connect(function()
-        if not settings.gifts then return end
-        pcall(function()
-            rEvents.freeGiftClaimRemote:InvokeServer()
-        end)
-        wait(300)
-    end)
-end
-
-function stopGiftCollection()
-    if loops.gifts then
-        loops.gifts:Disconnect()
-        loops.gifts = nil
+        return Elements
     end
+    return Tabs
 end
 
-function startChestCollection()
-    if loops.chests then loops.chests:Disconnect() end
-    loops.chests = RunService.Heartbeat:Connect(function()
-        if not settings.chests then return end
-        pcall(function()
-            local chestsFolder = Workspace:FindFirstChild("Chests")
-            if chestsFolder then
-                for _, chest in ipairs(chestsFolder:GetChildren()) do
-                    local clickDetector = chest:FindFirstChildOfClass("ClickDetector")
-                    if clickDetector then
-                        fireclickdetector(clickDetector)
-                        wait(0.5)
-                    end
-                end
-            end
-        end)
-        wait(60)
-    end)
-end
-
-function stopChestCollection()
-    if loops.chests then
-        loops.chests:Disconnect()
-        loops.chests = nil
-    end
-end
-
-function startWheelSpin()
-    if loops.spinWheel then loops.spinWheel:Disconnect() end
-    loops.spinWheel = RunService.Heartbeat:Connect(function()
-        if not settings.spinWheel then return end
-        pcall(function()
-            rEvents.wheelSpinRemote:InvokeServer()
-        end)
-        wait(3600)
-    end)
-end
-
-function stopWheelSpin()
-    if loops.spinWheel then
-        loops.spinWheel:Disconnect()
-        loops.spinWheel = nil
-    end
-end
-
-function claimAllCodes()
-    local codes = {"RELEASE", "SPEED", "RACE", "LEGENDS", "HOOPS", "GEMS", "UPDATE", "BOOST", "LEGEND", "FAST"}
-    for _, code in ipairs(codes) do
-        pcall(function()
-            rEvents.codeRemote:InvokeServer(code)
-        end)
-    end
-end
-
-function startAutoRebirth()
-    if loops.rebirth then loops.rebirth:Disconnect() end
-    loops.rebirth = RunService.Heartbeat:Connect(function()
-        if not settings.rebirth.enabled then return end
-        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-        if not leaderstats then return end
-        local steps = leaderstats:FindFirstChild("Steps")
-        local rebirths = leaderstats:FindFirstChild("Rebirths")
-        if not steps or not rebirths then return end
-        local cost = getRebirthCost()
-        if steps.Value >= cost then
-            pcall(function()
-                rebirthRemote:FireServer("rebirthRequest")
-            end)
-        end
-        wait(settings.rebirth.cooldown)
-    end)
-end
-
-function stopAutoRebirth()
-    if loops.rebirth then
-        loops.rebirth:Disconnect()
-        loops.rebirth = nil
-    end
-end
-
-function startTargetRebirth()
-    if loops.targetRebirth then loops.targetRebirth:Disconnect() end
-    loops.targetRebirth = RunService.Heartbeat:Connect(function()
-        if not settings.rebirth.target then return end
-        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-        if not leaderstats then return end
-        local rebirths = leaderstats:FindFirstChild("Rebirths")
-        local steps = leaderstats:FindFirstChild("Steps")
-        if not rebirths or not steps then return end
-        if rebirths.Value >= settings.rebirth.targetAmount then
-            settings.rebirth.target = false
-            return
-        end
-        local cost = getRebirthCost()
-        if steps.Value >= cost then
-            pcall(function()
-                rebirthRemote:FireServer("rebirthRequest")
-            end)
-        end
-        wait(settings.rebirth.targetCooldown)
-    end)
-end
-
-function stopTargetRebirth()
-    if loops.targetRebirth then
-        loops.targetRebirth:Disconnect()
-        loops.targetRebirth = nil
-    end
-end
-
-function performInstantRebirth(amount)
-    amount = amount or 1
-    for i = 1, amount do
-        pcall(function()
-            rebirthRemote:FireServer("rebirthRequest")
-        end)
-        wait(0.5)
-    end
-end
-
-function getRebirthCost()
-    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-    if not leaderstats then return math.huge end
-    local rebirths = leaderstats:FindFirstChild("Rebirths")
-    if not rebirths then return math.huge end
-    return (rebirths.Value + 1) * 1000000
-end
-
-function startPetHatching(petType)
-    if loops.petHatch[petType] then loops.petHatch[petType]:Disconnect() end
-    loops.petHatch[petType] = RunService.Heartbeat:Connect(function()
-        local petConfig = settings.pets[petType]
-        if not petConfig or not petConfig.hatch or not petConfig.selected then return end
-        local petObj = getPetObject(petConfig.selected)
-        if not petObj then return end
-        pcall(function()
-            petShopRemote:InvokeServer(petObj)
-        end)
-        wait(0.5)
-    end)
-end
-
-function stopPetHatching(petType)
-    if loops.petHatch[petType] then
-        loops.petHatch[petType]:Disconnect()
-        loops.petHatch[petType] = nil
-    end
-end
-
-function freezeCharacter(state)
-    local character = LocalPlayer.Character
-    if not character then return end
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if humanoidRootPart then
-        humanoidRootPart.Anchored = state
-    end
-end
-
-function updatePlayerStats()
-    local character = LocalPlayer.Character
-    if not character then return end
-    local humanoid = character:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = settings.walkSpeed
-        humanoid.JumpPower = settings.jumpPower
-    end
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if humanoidRootPart then
-        humanoidRootPart.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, settings.hipHeight)
-    end
-end
-
--- ===== NEW ANTI-AFK SYSTEM =====
-wait(0.5)
-
-local gui = Instance.new("ScreenGui")
-gui.Parent = game.CoreGui
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local bolinha = Instance.new("ImageButton")
-bolinha.Parent = gui
-bolinha.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-bolinha.BackgroundTransparency = 1 -- 🔹 Background agora é transparente
-bolinha.BorderColor3 = Color3.fromRGB(255, 0, 0)
-bolinha.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=116254090053371 "
-bolinha.Size = UDim2.new(0, 59, 0, 49)
-bolinha.Position = UDim2.new(0.8, 0, 0.2, 0)
-bolinha.Active = true
-bolinha.Draggable = true
-bolinha.AutoButtonColor = false
-bolinha.BorderSizePixel = 0
-bolinha.ScaleType = Enum.ScaleType.Fit
-
--- Deixa a bolinha redonda
-local corner = Instance.new("UICorner", bolinha)
-corner.CornerRadius = UDim.new(1, 0)
-
--- Status e serviços
-local ativo = false
-
--- Função de notificação
-local function notify(msg)
-	game:GetService("StarterGui"):SetCore("SendNotification", {
-		Title = "Anti-AFK",
-		Text = msg,
-		Duration = 4
-	})
-end
-
--- Clique para ativar/desativar
-bolinha.MouseButton1Click:Connect(function()
-	ativo = not ativo
-	if ativo then
-		notify("Activated ✅")
-	else
-		notify("Deactivated ❌")
-	end
-end)
-
--- Loop de anti-AFK
-game.Players.LocalPlayer.Idled:Connect(function()
-	if ativo then
-		VirtualUser:CaptureController()
-		VirtualUser:ClickButton2(Vector2.new())
-	end
-end)
+return KyyfiiiLibrary
