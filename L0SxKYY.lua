@@ -2,11 +2,10 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
 local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
-local username = player.Name
+local username = Players.LocalPlayer.Name
 
 if game.CoreGui:FindFirstChild("Library") then
     game.CoreGui:FindFirstChild("Library"):Destroy()
@@ -32,19 +31,20 @@ local PALETTE = {
     Elevated           = Color3.fromRGB( 35,  15,  35), -- deep purple
     Accent             = Color3.fromRGB(255, 255, 255), -- white accent
     TextPrimary        = Color3.fromRGB(  0,   0,   0), -- deep black text
-    TextSecondary      = Color3.fromRGB(  0,   0,   0), -- deep black text (for secondary)
+    TextSecondary      = Color3.fromRGB(  0,   0,   0), -- deep black text
     TextDisabled       = Color3.fromRGB( 60,  60,  60), -- dark gray
     Glow               = Color3.fromRGB(255, 255, 255), -- white glow
-    TextStrokeColor    = Color3.fromRGB(220, 220, 210), -- dirty white stroke
-    TextStrokeTransparency = 0.3, -- stroke transparency for glow effect
+    TextStrokeColor    = Color3.fromRGB(255, 255, 255), -- pure white stroke for glow
+    TextStrokeTransparency = 0.1, -- low transparency for strong glow effect
 }
 
--- Helper function to add UIStroke to text labels
+-- Helper function to add glowing UIStroke to text labels
 local function addTextStroke(textLabel)
     local stroke = Instance.new("UIStroke")
     stroke.Color = PALETTE.TextStrokeColor
-    stroke.Thickness = 2 -- Slightly thicker for better glow
+    stroke.Thickness = 3 -- Thicker stroke for prominent glow
     stroke.Transparency = PALETTE.TextStrokeTransparency
+    stroke.LineJoinMode = Enum.LineJoinMode.Round
     stroke.Parent = textLabel
 end
 
@@ -90,7 +90,7 @@ function KyyfiiiLibrary:createNotification(desc)
     title.TextColor3 = PALETTE.TextPrimary
     title.TextSize = 15
     title.TextXAlignment = Enum.TextXAlignment.Left
-    addTextStroke(title) -- Add dirty white stroke
+    addTextStroke(title) -- Add glowing white border
     Instance.new("UIPadding", title).PaddingLeft = UDim.new(0,10)
 
     descLbl.Name = "Description"
@@ -106,7 +106,7 @@ function KyyfiiiLibrary:createNotification(desc)
     descLbl.TextWrapped = true
     descLbl.TextXAlignment = Enum.TextXAlignment.Left
     descLbl.TextYAlignment = Enum.TextYAlignment.Top
-    addTextStroke(descLbl) -- Add dirty white stroke
+    addTextStroke(descLbl) -- Add glowing white border
     local pad = Instance.new("UIPadding", descLbl)
     pad.PaddingLeft = UDim.new(0,10)
     pad.PaddingRight = UDim.new(0,10)
@@ -191,7 +191,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
     TitleLbl.TextColor3 = PALETTE.TextPrimary
     TitleLbl.TextSize = 15
     TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    addTextStroke(TitleLbl) -- Add dirty white stroke
+    addTextStroke(TitleLbl) -- Add glowing white border
     Instance.new("UIPadding", TitleLbl).PaddingLeft = UDim.new(0,10)
 
     Tabs.Name = "Tabs"
@@ -237,7 +237,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
     UserIcon.BackgroundTransparency = 1
     UserIcon.Position = UDim2.new(0,8,.5,0)
     UserIcon.Size = UDim2.new(0,18,0,18)
-    UserIcon.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=123093571305491"
+    UserIcon.Image = "rbxassetid://73054449943371"
     UserIcon.ImageColor3 = PALETTE.TextPrimary
 
     UserText.Name = "UserText"
@@ -252,7 +252,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
     UserText.TextXAlignment = Enum.TextXAlignment.Left
     UserText.ClipsDescendants = true
     UserText.TextTruncate = Enum.TextTruncate.AtEnd
-    addTextStroke(UserText) -- Add dirty white stroke
+    addTextStroke(UserText) -- Add glowing white border
     Instance.new("UIPadding", UserText).PaddingLeft = UDim.new(0,36)
 
     -- // DRAG
@@ -382,7 +382,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
         TabBtn.TextColor3 = PALETTE.TextSecondary
         TabBtn.TextSize = 14
         TabBtn.TextXAlignment = Enum.TextXAlignment.Left
-        addTextStroke(TabBtn) -- Add dirty white stroke
+        addTextStroke(TabBtn) -- Add glowing white border
         Instance.new("UIPadding", TabBtn).PaddingLeft = UDim.new(0,36)
 
         TabIco.Name = "TabIcon"
@@ -474,7 +474,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             SectionTitle.TextColor3 = PALETTE.TextSecondary
             SectionTitle.TextSize = 14
             SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
-            addTextStroke(SectionTitle) -- Add dirty white stroke
+            addTextStroke(SectionTitle) -- Add glowing white border
             Instance.new("UIPadding", SectionTitle).PaddingLeft = UDim.new(0,2)
             
             -- Return object with UpdateText method
@@ -505,9 +505,9 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             LabelTitle.Text = "<b>"..Title.."</b>"
             LabelTitle.TextColor3 = PALETTE.TextPrimary
             LabelTitle.TextSize = 14
-            addTextStroke(LabelTitle) -- Add dirty white stroke
+            addTextStroke(LabelTitle) -- Add glowing white border
             
-            -- Return object with UpdateText method (replaced SetText)
+            -- Return object with UpdateText method
             return {
                 UpdateText = function(self, newText)
                     LabelTitle.Text = "<b>"..newText.."</b>"
@@ -536,7 +536,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             Btn.TextColor3 = PALETTE.TextSecondary
             Btn.TextSize = 14
             Btn.TextXAlignment = Enum.TextXAlignment.Left
-            addTextStroke(Btn) -- Add dirty white stroke
+            addTextStroke(Btn) -- Add glowing white border
             Instance.new("UIPadding", Btn).PaddingLeft = UDim.new(0,16)
 
             Btn.MouseButton1Click:Connect(function()
@@ -590,7 +590,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             ToggleTitle.TextColor3 = PALETTE.TextSecondary
             ToggleTitle.TextSize = 14
             ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
-            addTextStroke(ToggleTitle) -- Add dirty white stroke
+            addTextStroke(ToggleTitle) -- Add glowing white border
             Instance.new("UIPadding", ToggleTitle).PaddingLeft = UDim.new(0,16)
 
             TogglerHolder.Name = "TogglerHolder"
@@ -683,7 +683,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             BoxTitle.TextColor3 = PALETTE.TextSecondary
             BoxTitle.TextSize = 14
             BoxTitle.TextXAlignment = Enum.TextXAlignment.Left
-            addTextStroke(BoxTitle) -- Add dirty white stroke
+            addTextStroke(BoxTitle) -- Add glowing white border
             Instance.new("UIPadding", BoxTitle).PaddingLeft = UDim.new(0,16)
 
             TextBoxHolder.Name = "TextBoxHolder"
@@ -711,7 +711,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             TextBox.TextSize = 14
             TextBox.TextTruncate = Enum.TextTruncate.AtEnd
             TextBox.TextXAlignment = Enum.TextXAlignment.Right
-            addTextStroke(TextBox) -- Add dirty white stroke
+            addTextStroke(TextBox) -- Add glowing white border
             local pad = Instance.new("UIPadding", TextBox)
             pad.PaddingLeft = UDim.new(0,8)
             pad.PaddingRight = UDim.new(0,8)
@@ -787,7 +787,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             SelectedText.TextSize = 14
             SelectedText.TextTruncate = Enum.TextTruncate.AtEnd
             SelectedText.TextXAlignment = Enum.TextXAlignment.Right
-            addTextStroke(SelectedText) -- Add dirty white stroke
+            addTextStroke(SelectedText) -- Add glowing white border
             Instance.new("UIPadding", SelectedText).PaddingRight = UDim.new(0,2)
 
             DropdownToggler.Name = "DropdownToggler"
@@ -811,7 +811,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
             DropdownTitle.TextColor3 = PALETTE.TextSecondary
             DropdownTitle.TextSize = 14
             DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
-            addTextStroke(DropdownTitle) -- Add dirty white stroke
+            addTextStroke(DropdownTitle) -- Add glowing white border
             Instance.new("UIPadding", DropdownTitle).PaddingLeft = UDim.new(0,16)
 
             B_Dropdown.Name = "B_Dropdown"
@@ -864,7 +864,7 @@ function KyyfiiiLibrary:CreateWindow(Title, Description)
                 optBtn.TextColor3 = PALETTE.TextSecondary
                 optBtn.TextSize = 14
                 optBtn.TextXAlignment = Enum.TextXAlignment.Right
-                addTextStroke(optBtn) -- Add dirty white stroke
+                addTextStroke(optBtn) -- Add glowing white border
                 Instance.new("UIPadding", optBtn).PaddingRight = UDim.new(0,14)
 
                 optBtn.MouseButton1Click:Connect(function()
