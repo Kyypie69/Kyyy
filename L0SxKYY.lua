@@ -1,5 +1,5 @@
 -- Remove trailing space from library URL
-local libraryUrl = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/LOS.LIB.lua     "
+local libraryUrl = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/LOS.LIB.lua"
 local library
 
 local success, err = pcall(function()
@@ -65,8 +65,6 @@ local settings = {
     primary = {active = false, orb = nil, city = nil, speed = 1000, cooldown = 0.5},
     secondary = {active = false, orb = nil, city = nil, speed = 1000, cooldown = 0.5},
     third = {active = false, orb = nil, city = nil, speed = 1000, cooldown = 0.5},
-    antiIdle = false,
-    freezeChar = false,
     bullMode = false,
     race = {enabled = false, mode = "Teleport", target = 100, autoFill = false},
     hoops = false,
@@ -84,7 +82,8 @@ local settings = {
     gravity = 196.2,
     fpsCap = 120,
     pingStabilizer = false,
-    connectionEnhancer = false
+    connectionEnhancer = false,
+    antiLag = false
 }
 
 -- ===== STATE & LOOPS =====
@@ -99,7 +98,6 @@ local loops = {
     targetRebirth = nil,
     petHatch = {},
     statUpdate = nil,
-    antiIdle = nil,
     connection = nil,
     pingStabilizer = nil,
     hoopPopupCleaner = nil
@@ -109,6 +107,16 @@ local uiElements = {}
 local originalHoopProperties = {}
 local hoopPopupGui = nil
 local hoopPopupFrame = nil
+
+-- Storage for anti-lag original properties
+local originalProperties = {
+    particleEffects = {},
+    decals = {},
+    textures = {},
+    baseParts = {},
+    lighting = {},
+    lightingEffects = {}
+}
 
 -- ===== HOOP POPUP REMOVAL SYSTEM =====
 
@@ -394,6 +402,104 @@ function stopHoopFarm()
     stopPopupCleaner()
 end
 
+-- ===== ANTI-LAG FUNCTION =====
+function toggleAntiLag(enable)
+    if enable then
+        -- Store and disable particle effects
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+                originalProperties.particleEffects[v] = v.Enabled
+                v.Enabled = false
+            end
+        end
+        
+        -- Store and modify lighting
+        local lighting = game:GetService("Lighting")
+        originalProperties.lighting = {
+            GlobalShadows = lighting.GlobalShadows,
+            FogEnd = lighting.FogEnd,
+            Brightness = lighting.Brightness
+        }
+        lighting.GlobalShadows = false
+        lighting.FogEnd = 9e9
+        lighting.Brightness = 0
+        
+        -- Set quality level
+        settings().Rendering.QualityLevel = 1
+        
+        -- Store and modify decals/textures and baseParts
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("Decal") or v:IsA("Texture") then
+                originalProperties.decals[v] = v.Transparency
+                v.Transparency = 1
+            elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
+                originalProperties.baseParts[v] = {
+                    Material = v.Material,
+                    Reflectance = v.Reflectance
+                }
+                v.Material = Enum.Material.SmoothPlastic
+                if v.Parent and (v.Parent:FindFirstChild("Humanoid") or v.Parent.Parent:FindFirstChild("Humanoid")) then
+                    -- Skip player parts
+                else
+                    v.Reflectance = 0
+                end
+            end
+        end
+        
+        -- Store and disable lighting effects
+        local lighting = game:GetService("Lighting")
+        for _, v in pairs(lighting:GetChildren()) do
+            if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+                originalProperties.lightingEffects[v] = v.Enabled
+                v.Enabled = false
+            end
+        end
+    else
+        -- Restore particle effects
+        for obj, enabled in pairs(originalProperties.particleEffects) do
+            if obj and obj.Parent then
+                obj.Enabled = enabled
+            end
+        end
+        
+        -- Restore lighting
+        local lighting = game:GetService("Lighting")
+        if originalProperties.lighting.GlobalShadows ~= nil then
+            lighting.GlobalShadows = originalProperties.lighting.GlobalShadows
+        end
+        if originalProperties.lighting.FogEnd ~= nil then
+            lighting.FogEnd = originalProperties.lighting.FogEnd
+        end
+        if originalProperties.lighting.Brightness ~= nil then
+            lighting.Brightness = originalProperties.lighting.Brightness
+        end
+        
+        -- Restore decals/textures
+        for obj, transparency in pairs(originalProperties.decals) do
+            if obj and obj.Parent then
+                obj.Transparency = transparency
+            end
+        end
+        
+        -- Restore baseParts
+        for obj, props in pairs(originalProperties.baseParts) do
+            if obj and obj.Parent then
+                obj.Material = props.Material
+                obj.Reflectance = props.Reflectance
+            end
+        end
+        
+        -- Restore lighting effects
+        for obj, enabled in pairs(originalProperties.lightingEffects) do
+            if obj and obj.Parent then
+                obj.Enabled = enabled
+            end
+        end
+        
+        -- Note: QualityLevel cannot be reverted dynamically in Roblox
+    end
+end
+
 -- ===== TAB CREATION =====
 
 local Universal_Tools = window:CreateTab("Universal Tools", 96221607452840)
@@ -545,16 +651,18 @@ end)
 
 local Script_Settings = window:CreateTab("Settings", 139117814373418)
 Script_Settings:CreateSection("General Settings")
-Script_Settings:CreateToggle("Anti-Idle Protection", function(state)
-    settings.antiIdle = state
-    if state then startAntiIdle() else stopAntiIdle() end
-end)
 Script_Settings:CreateToggle("Freeze Character", function(state)
     settings.freezeChar = state
     freezeCharacter(state)
 end)
 Script_Settings:CreateToggle("Enable Bull Mode", function(state)
     settings.bullMode = state
+end)
+
+Script_Settings:CreateSection("Performance")
+Script_Settings:CreateToggle("Anti-Lag Mode", function(state)
+    settings.antiLag = state
+    toggleAntiLag(state)
 end)
 
 Script_Settings:CreateSection("Player Settings")
@@ -582,7 +690,7 @@ Credits:CreateLabel("Credits to: MARKYY")
 
 Credits:CreateButton("Discord: Click to Copy", function()
     pcall(function()
-        setclipboard("https://discord.gg/WMAHNafHqZ")
+        setclipboard("https://discord.gg/WMAHNafHqZ ")
     end)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Credits",
@@ -593,7 +701,7 @@ end)
 
 Credits:CreateButton("Roblox Profile: Click to Copy", function()
     pcall(function()
-        setclipboard("https://www.roblox.com/users/2815154822/profile")
+        setclipboard("https://www.roblox.com/users/2815154822/profile ")
     end)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Credits",
@@ -604,7 +712,7 @@ end)
 
 Credits:CreateButton("TikTok: Click to Copy", function()
     pcall(function()
-        setclipboard("https://www.tiktok.com/@markyy_0311")
+        setclipboard("https://www.tiktok.com/@markyy_0311 ")
     end)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Credits",
@@ -678,7 +786,7 @@ function rejoinServer()
 end
 
 function getServers(placeId)
-    local url = "https://games.roblox.com/v1/games/      " .. placeId .. "/servers/Public?sortOrder=Desc&limit=100"
+    local url = "https://games.roblox.com/v1/games/       " .. placeId .. "/servers/Public?sortOrder=Desc&limit=100"
     local success, response = pcall(function()
         return HttpService:JSONDecode(game:HttpGet(url))
     end)
@@ -981,23 +1089,6 @@ function stopPetHatching(petType)
     end
 end
 
-function startAntiIdle()
-    if loops.antiIdle then loops.antiIdle:Disconnect() end
-    loops.antiIdle = RunService.Heartbeat:Connect(function()
-        if not settings.antiIdle then return end
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
-        wait(30)
-    end)
-end
-
-function stopAntiIdle()
-    if loops.antiIdle then
-        loops.antiIdle:Disconnect()
-        loops.antiIdle = nil
-    end
-end
-
 function freezeCharacter(state)
     local character = LocalPlayer.Character
     if not character then return end
@@ -1020,3 +1111,58 @@ function updatePlayerStats()
         humanoidRootPart.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, settings.hipHeight)
     end
 end
+
+-- ===== NEW ANTI-AFK SYSTEM =====
+wait(0.5)
+
+local gui = Instance.new("ScreenGui")
+gui.Parent = game.CoreGui
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local bolinha = Instance.new("ImageButton")
+bolinha.Parent = gui
+bolinha.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+bolinha.BackgroundTransparency = 1 -- 🔹 Background agora é transparente
+bolinha.BorderColor3 = Color3.fromRGB(255, 0, 0)
+bolinha.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=116254090053371 "
+bolinha.Size = UDim2.new(0, 59, 0, 49)
+bolinha.Position = UDim2.new(0.8, 0, 0.2, 0)
+bolinha.Active = true
+bolinha.Draggable = true
+bolinha.AutoButtonColor = false
+bolinha.BorderSizePixel = 0
+bolinha.ScaleType = Enum.ScaleType.Fit
+
+-- Deixa a bolinha redonda
+local corner = Instance.new("UICorner", bolinha)
+corner.CornerRadius = UDim.new(1, 0)
+
+-- Status e serviços
+local ativo = false
+
+-- Função de notificação
+local function notify(msg)
+	game:GetService("StarterGui"):SetCore("SendNotification", {
+		Title = "Anti-AFK",
+		Text = msg,
+		Duration = 4
+	})
+end
+
+-- Clique para ativar/desativar
+bolinha.MouseButton1Click:Connect(function()
+	ativo = not ativo
+	if ativo then
+		notify("Activated ✅")
+	else
+		notify("Deactivated ❌")
+	end
+end)
+
+-- Loop de anti-AFK
+game.Players.LocalPlayer.Idled:Connect(function()
+	if ativo then
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+	end
+end)
